@@ -1,13 +1,12 @@
 import { useNavigate } from "react-router-dom";
-import Navbar from "../components/Navbar";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function Home() {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   return (
     <>
-      <Navbar />
-
       {/* HERO SECTION */}
       <section className="min-h-screen bg-gradient-to-br from-indigo-50 to-blue-100 flex items-center">
         <div className="max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-10 items-center">
@@ -24,21 +23,23 @@ export default function Home() {
               private scholarships based on eligibility, income, marks and category.
             </p>
 
-            <div className="mt-8 space-x-4">
-              <button
-                onClick={() => navigate("/signup")}
-                className="bg-indigo-600 text-white px-6 py-3 rounded-lg text-lg hover:bg-indigo-700"
-              >
-                Get Started
-              </button>
+            {!user && (
+              <div className="mt-8 space-x-4">
+                <button
+                  onClick={() => navigate("/signup")}
+                  className="bg-indigo-600 text-white px-6 py-3 rounded-lg text-lg hover:bg-indigo-700"
+                >
+                  Get Started
+                </button>
 
-              <button
-                onClick={() => navigate("/login")}
-                className="border border-indigo-600 text-indigo-600 px-6 py-3 rounded-lg text-lg hover:bg-indigo-50"
-              >
-                Login
-              </button>
-            </div>
+                <button
+                  onClick={() => navigate("/login")}
+                  className="border border-indigo-600 text-indigo-600 px-6 py-3 rounded-lg text-lg hover:bg-indigo-50"
+                >
+                  Login
+                </button>
+              </div>
+            )}
           </div>
 
           {/* RIGHT */}

@@ -14,15 +14,15 @@ export default function AppRoutes() {
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
 
-      <Route path="/student" element={
+      <Route path="/student/*" element={
         <ProtectedRoute role="STUDENT"><StudentDashboard/></ProtectedRoute>
       } />
 
-      <Route path="/moderator" element={
+      <Route path="/moderator/*" element={
         <ProtectedRoute role="MODERATOR"><ModeratorDashboard/></ProtectedRoute>
       } />
 
-      <Route path="/admin" element={
+      <Route path="/admin/*" element={
         <ProtectedRoute role="ADMIN"><AdminDashboard/></ProtectedRoute>
       } />
     </Routes>

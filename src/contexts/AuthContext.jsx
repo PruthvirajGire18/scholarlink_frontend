@@ -1,9 +1,18 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 import { loginAPI, signupAPI } from "../services/authService";
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const role = localStorage.getItem("role");
+    if (token && role) {
+      setUser({ role });
+    }
+  }, []);
+
   const login = async (formData) => {
     const res = await loginAPI(formData);
     localStorage.setItem("token", res.token);
