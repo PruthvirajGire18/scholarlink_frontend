@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   getAllModerators,
   createModerator,
@@ -16,6 +17,17 @@ export default function AdminDashboard() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (location.pathname === "/admin/scholarships") {
+      setView("PENDING");
+    } else {
+      setView("MODERATORS");
+    }
+  }, [location.pathname]);
 
   /* =========================
      MODERATOR STATE
@@ -121,12 +133,12 @@ export default function AdminDashboard() {
 
       {/* VIEW SWITCH */}
       <div className="flex gap-4 mb-6">
-        <button onClick={() => setView("MODERATORS")}
+        <button onClick={() => navigate("/admin")}
           className={`px-4 py-2 rounded ${view==="MODERATORS"?"bg-indigo-600 text-white":"bg-gray-200"}`}>
           Moderators
         </button>
 
-        <button onClick={() => setView("PENDING")}
+        <button onClick={() => navigate("/admin/scholarships")}
           className={`px-4 py-2 rounded ${view==="PENDING"?"bg-indigo-600 text-white":"bg-gray-200"}`}>
           Pending Scholarships
         </button>

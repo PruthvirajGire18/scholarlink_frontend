@@ -113,7 +113,7 @@ export default function Navbar() {
         </Link>
 
         <Link
-          to="/moderator/create"
+          to="/moderator"
           className="text-indigo-600 font-medium hover:underline"
         >
           Create Scholarship
