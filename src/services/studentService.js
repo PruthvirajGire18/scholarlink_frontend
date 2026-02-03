@@ -13,10 +13,22 @@ API.interceptors.request.use((req) => {
   return req;
 });
 
-/**
- * STUDENT → Get all approved scholarships
- */
 export const getApprovedScholarships = async () => {
   const res = await API.get("/student/scholarships");
+  return res.data;
+};
+
+export const getScholarshipById = async (id) => {
+  const res = await API.get(`/student/scholarships/${id}`);
+  return res.data;
+};
+
+export const createAssistanceRequest = async (scholarshipId, message) => {
+  const res = await API.post("/student/assistance", { scholarshipId, message });
+  return res.data;
+};
+
+export const getMyAssistanceRequests = async () => {
+  const res = await API.get("/student/assistance");
   return res.data;
 };

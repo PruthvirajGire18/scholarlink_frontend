@@ -2,26 +2,35 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   createScholarship,
-  getMyScholarships
+  getMyScholarships,
+  updateScholarship,
+  deleteScholarship,
+  getAssistanceRequests,
+  replyToAssistance,
+  resolveAssistance,
+  getScholarshipApplications
 } from "../../services/moderatorService";
 
 export default function ModeratorDashboard() {
-  /* =========================
-     VIEW STATE
-  ========================= */
   const [view, setView] = useState("CREATE");
   const [loading, setLoading] = useState(false);
-
   const location = useLocation();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (location.pathname === "/moderator/my-scholarships") {
-      setView("MY_SCHOLARSHIPS");
-    } else {
-      setView("CREATE");
-    }
+    if (location.pathname === "/moderator/my-scholarships") setView("MY_SCHOLARSHIPS");
+    else if (location.pathname === "/moderator/assistance") setView("ASSISTANCE");
+    else if (location.pathname === "/moderator/applications") setView("APPLICATIONS");
+    else setView("CREATE");
   }, [location.pathname]);
+
+  const [assistanceList, setAssistanceList] = useState([]);
+  const [assistanceFilter, setAssistanceFilter] = useState("");
+  const [replyText, setReplyText] = useState("");
+  const [replyingId, setReplyingId] = useState(null);
+  const [applicationsScholarshipId, setApplicationsScholarshipId] = useState(null);
+  const [applicationsList, setApplicationsList] = useState([]);
+  const [editingId, setEditingId] = useState(null);
 
   /* =========================
      FORM STATE (SCHEMA COMPLETE)
@@ -139,6 +148,136 @@ export default function ModeratorDashboard() {
     }
   };
 
+  const fetchAssistance = async () => {
+    try {
+      setLoading(true);
+      const data = await getAssistanceRequests(assistanceFilter || undefined);
+      setAssistanceList(data);
+    } catch {
+      alert("Failed to load assistance requests");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchApplications = async (sid) => {
+    if (!sid) return;
+    try {
+      setLoading(true);
+      const data = await getScholarshipApplications(sid);
+      setApplicationsList(data);
+    } catch {
+      alert("Failed to load applications");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (view === "MY_SCHOLARSHIPS") fetchMyScholarships();
+    if (view === "ASSISTANCE") fetchAssistance();
+    if (view === "APPLICATIONS") {
+      if (applicationsScholarshipId) fetchApplications(applicationsScholarshipId);
+      else if (myScholarships.length === 0) fetchMyScholarships();
+    }
+  }, [view, assistanceFilter, applicationsScholarshipId]);
+
+  const handleUpdateScholarship = async () => {
+    if (!editingId || !form.title || !form.amount || !form.deadline) {
+      alert("Title, Amount and Deadline are required");
+      return;
+    }
+    try {
+      setLoading(true);
+      const payload = {
+        title: form.title,
+        description: form.description,
+        provider: {
+          type: form.providerType,
+          name: form.providerName || undefined,
+          website: form.providerWebsite || undefined
+        },
+        amount: Number(form.amount),
+        benefits: form.benefits || undefined,
+        eligibility: {
+          minMarks: form.minMarks || undefined,
+          maxIncome: form.maxIncome || undefined,
+          gender: form.gender,
+          educationLevel: form.educationLevel,
+          statesAllowed: form.statesAllowed ? form.statesAllowed.split(",").map((s) => s.trim()) : []
+        },
+        documentsRequired: form.documentsRequired ? form.documentsRequired.split(",").map((d) => d.trim()) : [],
+        applicationProcess: {
+          mode: form.applicationMode,
+          applyLink: form.applyLink || undefined,
+          steps: form.applicationSteps ? form.applicationSteps.split("\n") : []
+        },
+        deadline: form.deadline
+      };
+      await updateScholarship(editingId, payload);
+      alert("Scholarship updated; resubmitted for review");
+      setEditingId(null);
+      fetchMyScholarships();
+    } catch (err) {
+      alert(err.response?.data?.msg || "Failed to update");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleWithdraw = async (id) => {
+    if (!confirm("Withdraw this scholarship?")) return;
+    try {
+      await deleteScholarship(id);
+      fetchMyScholarships();
+    } catch (err) {
+      alert(err.response?.data?.msg || "Failed to withdraw");
+    }
+  };
+
+  const handleReply = async (id) => {
+    if (!replyText.trim()) return;
+    try {
+      await replyToAssistance(id, replyText.trim());
+      setReplyText("");
+      setReplyingId(null);
+      fetchAssistance();
+    } catch (err) {
+      alert(err.response?.data?.msg || "Failed to reply");
+    }
+  };
+
+  const handleResolve = async (id) => {
+    try {
+      await resolveAssistance(id);
+      fetchAssistance();
+    } catch (err) {
+      alert(err.response?.data?.msg || "Failed to resolve");
+    }
+  };
+
+  const fillFormFromScholarship = (s) => {
+    setForm({
+      title: s.title || "",
+      description: s.description || "",
+      providerType: s.provider?.type || "GOVERNMENT",
+      providerName: s.provider?.name || "",
+      providerWebsite: s.provider?.website || "",
+      amount: s.amount ?? "",
+      benefits: s.benefits || "",
+      minMarks: s.eligibility?.minMarks ?? "",
+      maxIncome: s.eligibility?.maxIncome ?? "",
+      gender: s.eligibility?.gender || "ANY",
+      educationLevel: s.eligibility?.educationLevel || "DIPLOMA",
+      statesAllowed: Array.isArray(s.eligibility?.statesAllowed) ? s.eligibility.statesAllowed.join(", ") : "",
+      documentsRequired: Array.isArray(s.documentsRequired) ? s.documentsRequired.join(", ") : "",
+      applicationMode: s.applicationProcess?.mode || "ONLINE",
+      applyLink: s.applicationProcess?.applyLink || "",
+      applicationSteps: Array.isArray(s.applicationProcess?.steps) ? s.applicationProcess.steps.join("\n") : "",
+      deadline: s.deadline ? new Date(s.deadline).toISOString().slice(0, 10) : ""
+    });
+  };
+
   useEffect(() => {
     if (view === "MY_SCHOLARSHIPS") {
       fetchMyScholarships();
@@ -167,13 +306,21 @@ export default function ModeratorDashboard() {
 
         <button
           onClick={() => navigate("/moderator/my-scholarships")}
-          className={`px-4 py-2 rounded ${
-            view === "MY_SCHOLARSHIPS"
-              ? "bg-indigo-600 text-white"
-              : "bg-gray-200"
-          }`}
+          className={`px-4 py-2 rounded ${view === "MY_SCHOLARSHIPS" ? "bg-indigo-600 text-white" : "bg-gray-200"}`}
         >
           My Scholarships
+        </button>
+        <button
+          onClick={() => navigate("/moderator/assistance")}
+          className={`px-4 py-2 rounded ${view === "ASSISTANCE" ? "bg-indigo-600 text-white" : "bg-gray-200"}`}
+        >
+          Assistance
+        </button>
+        <button
+          onClick={() => navigate("/moderator/applications")}
+          className={`px-4 py-2 rounded ${view === "APPLICATIONS" ? "bg-indigo-600 text-white" : "bg-gray-200"}`}
+        >
+          Application Progress
         </button>
       </div>
 
@@ -413,32 +560,257 @@ export default function ModeratorDashboard() {
                   <th className="p-2 text-left">Amount</th>
                   <th className="p-2 text-left">Deadline</th>
                   <th className="p-2 text-left">Status</th>
+                  <th className="p-2 text-left">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {myScholarships.map(s => (
+                {myScholarships.map((s) => (
                   <tr key={s._id} className="border-t">
                     <td className="p-2">{s.title}</td>
                     <td className="p-2">{s.provider?.type}</td>
                     <td className="p-2">₹{s.amount}</td>
-                    <td className="p-2">
-                      {new Date(s.deadline).toLocaleDateString()}
-                    </td>
+                    <td className="p-2">{new Date(s.deadline).toLocaleDateString()}</td>
                     <td className="p-2 font-semibold">
-                      {s.status === "PENDING" && (
-                        <span className="text-yellow-600">Pending</span>
-                      )}
-                      {s.status === "APPROVED" && (
-                        <span className="text-green-600">Approved</span>
-                      )}
+                      {s.status === "PENDING" && <span className="text-yellow-600">Pending</span>}
+                      {s.status === "APPROVED" && <span className="text-green-600">Approved</span>}
+                      {s.status === "REJECTED" && <span className="text-red-600">Rejected</span>}
+                    </td>
+                    <td className="p-2">
                       {s.status === "REJECTED" && (
-                        <span className="text-red-600">Rejected</span>
+                        <>
+                          <button
+                            onClick={() => {
+                              setEditingId(s._id);
+                              fillFormFromScholarship(s);
+                              setView("EDIT");
+                            }}
+                            className="bg-amber-600 text-white px-2 py-1 rounded text-sm mr-1"
+                          >
+                            Edit &amp; Re-submit
+                          </button>
+                        </>
+                      )}
+                      {s.status === "PENDING" && (
+                        <>
+                          <button
+                            onClick={() => {
+                              setEditingId(s._id);
+                              fillFormFromScholarship(s);
+                              setView("EDIT");
+                            }}
+                            className="bg-gray-600 text-white px-2 py-1 rounded text-sm mr-1"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleWithdraw(s._id)}
+                            className="bg-red-600 text-white px-2 py-1 rounded text-sm"
+                          >
+                            Withdraw
+                          </button>
+                        </>
                       )}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          )}
+          {myScholarships.some((s) => s.status === "REJECTED") && (
+            <div className="mt-4 space-y-2">
+              <h3 className="font-semibold">Rejection reasons</h3>
+              {myScholarships
+                .filter((s) => s.status === "REJECTED" && s.reviewRemarks)
+                .map((s) => (
+                  <div key={s._id} className="border p-2 rounded bg-red-50">
+                    <strong>{s.title}</strong>: {s.reviewRemarks}
+                  </div>
+                ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {view === "EDIT" && editingId && (
+        <div className="bg-white p-6 rounded shadow max-w-2xl">
+          <h2 className="text-lg font-semibold mb-4">Edit scholarship (resubmit for review)</h2>
+          <input
+            type="text"
+            placeholder="Scholarship Title"
+            value={form.title}
+            onChange={(e) => setForm({ ...form, title: e.target.value })}
+            className="border p-2 w-full mb-2"
+          />
+          <textarea
+            placeholder="Description"
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+            className="border p-2 w-full mb-4"
+          />
+          <input
+            type="number"
+            placeholder="Amount"
+            value={form.amount}
+            onChange={(e) => setForm({ ...form, amount: e.target.value })}
+            className="border p-2 w-full mb-2"
+          />
+          <input
+            type="date"
+            min={new Date().toISOString().split("T")[0]}
+            value={form.deadline}
+            onChange={(e) => setForm({ ...form, deadline: e.target.value })}
+            className="border p-2 w-full mb-4"
+          />
+          <div className="flex gap-2">
+            <button
+              disabled={loading}
+              onClick={handleUpdateScholarship}
+              className="bg-indigo-600 text-white px-4 py-2 rounded"
+            >
+              Update &amp; Re-submit
+            </button>
+            <button
+              onClick={() => { setEditingId(null); setView("MY_SCHOLARSHIPS"); }}
+              className="bg-gray-200 px-4 py-2 rounded"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {view === "ASSISTANCE" && (
+        <div className="bg-white p-6 rounded shadow">
+          <h2 className="text-lg font-semibold mb-4">Assistance inbox</h2>
+          <div className="flex gap-2 mb-4">
+            <button
+              onClick={() => setAssistanceFilter("")}
+              className={`px-3 py-1 rounded ${!assistanceFilter ? "bg-indigo-600 text-white" : "bg-gray-200"}`}
+            >
+              All
+            </button>
+            <button
+              onClick={() => setAssistanceFilter("OPEN")}
+              className={`px-3 py-1 rounded ${assistanceFilter === "OPEN" ? "bg-indigo-600 text-white" : "bg-gray-200"}`}
+            >
+              Open
+            </button>
+            <button
+              onClick={() => setAssistanceFilter("RESOLVED")}
+              className={`px-3 py-1 rounded ${assistanceFilter === "RESOLVED" ? "bg-indigo-600 text-white" : "bg-gray-200"}`}
+            >
+              Resolved
+            </button>
+          </div>
+          {loading && <p>Loading...</p>}
+          {!loading && assistanceList.length === 0 && <p className="text-gray-500">No assistance requests.</p>}
+          {!loading && assistanceList.length > 0 && (
+            <div className="space-y-4">
+              {assistanceList.map((ar) => (
+                <div key={ar._id} className="border rounded p-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-semibold">{ar.scholarshipId?.title}</p>
+                      <p className="text-sm text-gray-600">Student: {ar.studentId?.name} ({ar.studentId?.email})</p>
+                      <p className={`text-sm font-medium ${ar.status === "OPEN" ? "text-amber-600" : "text-green-600"}`}>
+                        {ar.status}
+                      </p>
+                    </div>
+                    {ar.status === "OPEN" && (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleResolve(ar._id)}
+                          className="bg-green-600 text-white px-2 py-1 rounded text-sm"
+                        >
+                          Resolve
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-2 border-t pt-2 space-y-1">
+                    {(ar.messages || []).map((m, i) => (
+                      <p key={i} className="text-sm">
+                        <span className="font-medium">{m.from}:</span> {m.text}
+                      </p>
+                    ))}
+                  </div>
+                  {ar.status === "OPEN" && (
+                    <div className="mt-2 flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Reply..."
+                        value={replyingId === ar._id ? replyText : ""}
+                        onChange={(e) => {
+                          setReplyingId(ar._id);
+                          setReplyText(e.target.value);
+                        }}
+                        onFocus={() => setReplyingId(ar._id)}
+                        className="border p-2 flex-1 rounded"
+                      />
+                      <button
+                        onClick={() => handleReply(ar._id)}
+                        disabled={!(replyingId === ar._id && replyText.trim())}
+                        className="bg-indigo-600 text-white px-3 py-1 rounded disabled:opacity-50"
+                      >
+                        Send
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {view === "APPLICATIONS" && (
+        <div className="bg-white p-6 rounded shadow">
+          <h2 className="text-lg font-semibold mb-4">Application progress</h2>
+          {!applicationsScholarshipId ? (
+            <>
+              <p className="text-gray-600 mb-2">Select a scholarship:</p>
+              <ul className="list-disc list-inside">
+                {myScholarships.map((s) => (
+                  <li key={s._id}>
+                    <button
+                      onClick={() => { setApplicationsScholarshipId(s._id); fetchApplications(s._id); }}
+                      className="text-indigo-600 underline"
+                    >
+                      {s.title}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => { setApplicationsScholarshipId(null); setApplicationsList([]); }}
+                className="text-gray-500 text-sm mb-2"
+              >
+                ← Back
+              </button>
+              {loading && <p>Loading...</p>}
+              {!loading && (
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="bg-gray-200">
+                      <th className="p-2 text-left">Student</th>
+                      <th className="p-2 text-left">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {applicationsList.map((a) => (
+                      <tr key={a._id} className="border-t">
+                        <td className="p-2">{a.studentId?.name} ({a.studentId?.email})</td>
+                        <td className="p-2">{a.status}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+              {!loading && applicationsList.length === 0 && <p className="text-gray-500">No applications for this scholarship.</p>}
+            </>
           )}
         </div>
       )}

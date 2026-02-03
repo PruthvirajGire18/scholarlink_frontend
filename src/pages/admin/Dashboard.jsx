@@ -5,29 +5,55 @@ import {
   createModerator,
   getPendingScholarships,
   getAllScholarships,
-  reviewScholarship
+  reviewScholarship,
+  getVerificationQueue,
+  getPendingDocuments,
+  getFraudAlerts
 } from "../../services/adminService";
+import VerificationQueue from "./VerificationQueue";
+import DocumentReview from "./DocumentReview";
+import AuditLogs from "./AuditLogs";
+import FraudPanel from "./FraudPanel";
 
 export default function AdminDashboard() {
-  /* =========================
-     VIEW STATE
-  ========================= */
   const [view, setView] = useState("MODERATORS");
-  // MODERATORS | PENDING | ALL
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [overview, setOverview] = useState({ pendingScholarships: 0, pendingDocuments: 0, fraudAlerts: 0 });
 
   const location = useLocation();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (location.pathname === "/admin/scholarships") {
-      setView("PENDING");
-    } else {
-      setView("MODERATORS");
-    }
+    if (location.pathname === "/admin/scholarships") setView("PENDING");
+    else if (location.pathname === "/admin/moderators") setView("MODERATORS");
+    else if (location.pathname === "/admin/verification") setView("VERIFICATION");
+    else if (location.pathname === "/admin/documents") setView("DOCUMENTS");
+    else if (location.pathname === "/admin/audit-logs") setView("AUDIT");
+    else if (location.pathname === "/admin/fraud") setView("FRAUD");
+    else if (location.pathname === "/admin" || location.pathname === "/admin/") setView("OVERVIEW");
+    else setView("OVERVIEW");
   }, [location.pathname]);
+
+  useEffect(() => {
+    if (view !== "OVERVIEW") return;
+    (async () => {
+      try {
+        const [sch, docs, fraud] = await Promise.all([
+          getPendingScholarships(),
+          getPendingDocuments(),
+          getFraudAlerts(false)
+        ]);
+        setOverview({
+          pendingScholarships: sch.length,
+          pendingDocuments: docs.length,
+          fraudAlerts: fraud.length
+        });
+      } catch {
+        setOverview({ pendingScholarships: 0, pendingDocuments: 0, fraudAlerts: 0 });
+      }
+    })();
+  }, [view]);
 
   /* =========================
      MODERATOR STATE
@@ -106,8 +132,8 @@ export default function AdminDashboard() {
   /* =========================
      REVIEW SCHOLARSHIP
   ========================= */
-  const handleReview = async (id, status) => {
-    await reviewScholarship(id, status);
+  const handleReview = async (id, status, remarks = "") => {
+    await reviewScholarship(id, status, remarks);
     fetchPendingScholarships();
     fetchAllScholarships();
   };
@@ -122,39 +148,68 @@ export default function AdminDashboard() {
     if (view === "ALL") fetchAllScholarships();
   }, [view]);
 
-  /* =========================
-     UI
-  ========================= */
+  const navClass = (v) =>
+    view === v ? "bg-indigo-600 text-white" : "bg-gray-200";
+
   return (
     <div className="min-h-screen bg-gray-100 p-6">
-      <h1 className="text-2xl font-bold mb-6">
-        Admin Dashboard
-      </h1>
+      <h1 className="text-2xl font-bold mb-6">Admin Dashboard</h1>
 
-      {/* VIEW SWITCH */}
-      <div className="flex gap-4 mb-6">
-        <button onClick={() => navigate("/admin")}
-          className={`px-4 py-2 rounded ${view==="MODERATORS"?"bg-indigo-600 text-white":"bg-gray-200"}`}>
+      <div className="flex flex-wrap gap-2 mb-6">
+        <button onClick={() => navigate("/admin")} className={`px-4 py-2 rounded ${navClass("OVERVIEW")}`}>
+          Overview
+        </button>
+        <button onClick={() => navigate("/admin/moderators")} className={`px-4 py-2 rounded ${navClass("MODERATORS")}`}>
           Moderators
         </button>
-
-        <button onClick={() => navigate("/admin/scholarships")}
-          className={`px-4 py-2 rounded ${view==="PENDING"?"bg-indigo-600 text-white":"bg-gray-200"}`}>
+        <button onClick={() => navigate("/admin/scholarships")} className={`px-4 py-2 rounded ${navClass("PENDING")}`}>
           Pending Scholarships
         </button>
-
-        <button onClick={() => setView("ALL")}
-          className={`px-4 py-2 rounded ${view==="ALL"?"bg-indigo-600 text-white":"bg-gray-200"}`}>
+        <button onClick={() => setView("ALL")} className={`px-4 py-2 rounded ${navClass("ALL")}`}>
           All Scholarships
+        </button>
+        <button onClick={() => navigate("/admin/verification")} className={`px-4 py-2 rounded ${navClass("VERIFICATION")}`}>
+          Verification Queue
+        </button>
+        <button onClick={() => navigate("/admin/documents")} className={`px-4 py-2 rounded ${navClass("DOCUMENTS")}`}>
+          Document Review
+        </button>
+        <button onClick={() => navigate("/admin/audit-logs")} className={`px-4 py-2 rounded ${navClass("AUDIT")}`}>
+          Audit Logs
+        </button>
+        <button onClick={() => navigate("/admin/fraud")} className={`px-4 py-2 rounded ${navClass("FRAUD")}`}>
+          Fraud Panel
         </button>
       </div>
 
       {loading && <p>Loading...</p>}
       {error && <p className="text-red-500">{error}</p>}
 
-      {/* =========================
-         MODERATORS VIEW
-      ========================= */}
+      {view === "OVERVIEW" && (
+        <div className="grid md:grid-cols-3 gap-4 mb-6">
+          <div className="bg-white p-6 rounded shadow">
+            <h3 className="font-semibold text-gray-600">Pending Scholarships</h3>
+            <p className="text-3xl font-bold text-indigo-600">{overview.pendingScholarships}</p>
+            <button onClick={() => navigate("/admin/scholarships")} className="mt-2 text-indigo-600 text-sm">View</button>
+          </div>
+          <div className="bg-white p-6 rounded shadow">
+            <h3 className="font-semibold text-gray-600">Pending Documents</h3>
+            <p className="text-3xl font-bold text-amber-600">{overview.pendingDocuments}</p>
+            <button onClick={() => navigate("/admin/documents")} className="mt-2 text-amber-600 text-sm">View</button>
+          </div>
+          <div className="bg-white p-6 rounded shadow">
+            <h3 className="font-semibold text-gray-600">Fraud Alerts (open)</h3>
+            <p className="text-3xl font-bold text-red-600">{overview.fraudAlerts}</p>
+            <button onClick={() => navigate("/admin/fraud")} className="mt-2 text-red-600 text-sm">View</button>
+          </div>
+        </div>
+      )}
+
+      {view === "VERIFICATION" && <VerificationQueue />}
+      {view === "DOCUMENTS" && <DocumentReview />}
+      {view === "AUDIT" && <AuditLogs />}
+      {view === "FRAUD" && <FraudPanel />}
+
       {view === "MODERATORS" && (
         <>
           <div className="bg-white p-4 rounded shadow mb-6">
