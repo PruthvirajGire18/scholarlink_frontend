@@ -33,83 +33,52 @@ export default function FraudPanel() {
   };
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-lg font-semibold">Fraud Monitoring Panel</h2>
-      {error && <p className="text-red-600 text-sm">{error}</p>}
+    <div className="mt-8 space-y-6">
+      <h2 className="text-lg font-semibold text-slate-900">Fraud monitoring</h2>
+      {error && <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
 
-      <div className="flex gap-4 items-center">
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={filterResolved}
-            onChange={(e) => setFilterResolved(e.target.checked)}
-          />
-          Show resolved only
-        </label>
-      </div>
+      <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+        <input type="checkbox" checked={filterResolved} onChange={(e) => setFilterResolved(e.target.checked)} className="rounded border-slate-300 text-teal-600 focus:ring-teal-500" />
+        Show resolved only
+      </label>
 
-      {loading && <p className="text-gray-500">Loading...</p>}
+      {loading && <div className="flex justify-center py-12"><div className="loading-dots"><span /><span /><span /></div></div>}
 
       {!loading && (
-        <div className="bg-white rounded shadow overflow-hidden">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-gray-100 border-b">
-                <th className="p-2 text-left">Severity</th>
-                <th className="p-2 text-left">Signal</th>
-                <th className="p-2 text-left">Entity</th>
-                <th className="p-2 text-left">Detected</th>
-                <th className="p-2 text-left">Status</th>
-                <th className="p-2 text-left">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {alerts.map((a) => (
-                <tr key={a._id} className="border-b">
-                  <td className="p-2">
-                    <span
-                      className={`px-2 py-0.5 rounded text-xs font-medium ${
-                        a.severity === "HIGH"
-                          ? "bg-red-100 text-red-800"
-                          : a.severity === "MEDIUM"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : "bg-gray-100 text-gray-800"
-                      }`}
-                    >
-                      {a.severity}
-                    </span>
-                  </td>
-                  <td className="p-2 font-mono text-sm">{a.signalType}</td>
-                  <td className="p-2 text-sm">
-                    {a.entityType} {a.entityId?.toString?.()?.slice(-6)}
-                  </td>
-                  <td className="p-2 text-sm text-gray-600">
-                    {a.detectedAt ? new Date(a.detectedAt).toLocaleString() : "-"}
-                  </td>
-                  <td className="p-2">
-                    {a.isResolved ? (
-                      <span className="text-green-600">Resolved</span>
-                    ) : (
-                      <span className="text-amber-600">Open</span>
-                    )}
-                  </td>
-                  <td className="p-2">
-                    {!a.isResolved && (
-                      <button
-                        onClick={() => handleMarkReviewed(a._id)}
-                        className="bg-gray-700 text-white px-2 py-1 rounded text-sm"
-                      >
-                        Mark reviewed
-                      </button>
-                    )}
-                  </td>
+        <div className="card overflow-hidden p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50/80">
+                  <th className="p-3 text-left text-sm font-semibold text-slate-700">Severity</th>
+                  <th className="p-3 text-left text-sm font-semibold text-slate-700">Signal</th>
+                  <th className="p-3 text-left text-sm font-semibold text-slate-700">Entity</th>
+                  <th className="p-3 text-left text-sm font-semibold text-slate-700">Detected</th>
+                  <th className="p-3 text-left text-sm font-semibold text-slate-700">Status</th>
+                  <th className="p-3 text-left text-sm font-semibold text-slate-700">Action</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          {alerts.length === 0 && (
-            <p className="p-4 text-gray-500">No fraud alerts.</p>
-          )}
+              </thead>
+              <tbody>
+                {alerts.map((a) => (
+                  <tr key={a._id} className="border-b border-slate-100 last:border-0">
+                    <td className="p-3">
+                      <span className={a.severity === "HIGH" ? "badge-danger" : a.severity === "MEDIUM" ? "badge-warning" : "badge-neutral"}>{a.severity}</span>
+                    </td>
+                    <td className="p-3 font-mono text-sm">{a.signalType}</td>
+                    <td className="p-3 text-sm">{a.entityType} {a.entityId?.toString?.()?.slice(-6)}</td>
+                    <td className="p-3 text-sm text-slate-600">{a.detectedAt ? new Date(a.detectedAt).toLocaleString() : "—"}</td>
+                    <td className="p-3">{a.isResolved ? <span className="badge-success">Resolved</span> : <span className="badge-warning">Open</span>}</td>
+                    <td className="p-3">
+                      {!a.isResolved && (
+                        <button onClick={() => handleMarkReviewed(a._id)} className="btn-secondary py-1.5 text-sm">Mark reviewed</button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {alerts.length === 0 && <p className="p-6 text-center text-slate-500">No fraud alerts.</p>}
         </div>
       )}
     </div>

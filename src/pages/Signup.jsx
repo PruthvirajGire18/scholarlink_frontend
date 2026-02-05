@@ -3,75 +3,116 @@ import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 export default function Signup() {
-  const [form, setForm] = useState({});
+  const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const { signup } = useAuth();
   const navigate = useNavigate();
 
-  const submit = async () => {
+  const submit = async (e) => {
+    e?.preventDefault();
+    setError("");
     setLoading(true);
-    await signup(form);
-    setLoading(false);
-    navigate("/login");
+    try {
+      await signup(form);
+      navigate("/login");
+    } catch (err) {
+      setError(err?.message || "Registration failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 via-white to-emerald-100">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-teal-50 px-4 py-12">
+      <div className="w-full max-w-md">
+        <div className="card border-0 shadow-xl">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-teal-600">Create account</h1>
+            <p className="mt-1 text-sm text-slate-500">
+              Discover scholarships tailored for you
+            </p>
+          </div>
 
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-extrabold text-emerald-700">
-            Student Registration
-          </h1>
-          <p className="text-sm text-gray-500">
-            Discover scholarships tailored for you
+          {error && (
+            <div
+              role="alert"
+              className="mt-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700"
+            >
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={submit} className="mt-6 space-y-5">
+            <div>
+              <label htmlFor="signup-name" className="mb-1.5 block text-sm font-medium text-slate-700">
+                Full name
+              </label>
+              <input
+                id="signup-name"
+                type="text"
+                autoComplete="name"
+                placeholder="Your name"
+                value={form.name}
+                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                className="input-base"
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="signup-email" className="mb-1.5 block text-sm font-medium text-slate-700">
+                Email
+              </label>
+              <input
+                id="signup-email"
+                type="email"
+                autoComplete="email"
+                placeholder="you@example.com"
+                value={form.email}
+                onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                className="input-base"
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="signup-password" className="mb-1.5 block text-sm font-medium text-slate-700">
+                Password
+              </label>
+              <input
+                id="signup-password"
+                type="password"
+                autoComplete="new-password"
+                placeholder="At least 8 characters"
+                value={form.password}
+                onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+                className="input-base"
+                required
+                minLength={8}
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn-primary w-full py-3"
+            >
+              {loading ? "Creating account…" : "Create account"}
+            </button>
+          </form>
+
+          <p className="mt-6 text-center text-sm text-slate-500">
+            Already have an account?{" "}
+            <button
+              type="button"
+              onClick={() => navigate("/login")}
+              className="font-semibold text-teal-600 hover:text-teal-700 hover:underline"
+            >
+              Log in
+            </button>
           </p>
         </div>
-
-        <div className="space-y-4">
-          <input
-            placeholder="Full Name"
-            className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-          />
-
-          <input
-            type="email"
-            placeholder="Email address"
-            className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
-            onChange={(e) => setForm({ ...form, email: e.target.value })}
-          />
-
-          <input
-            type="password"
-            placeholder="Create strong password"
-            className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
-            onChange={(e) => setForm({ ...form, password: e.target.value })}
-          />
-
-          <button
-            onClick={submit}
-            disabled={loading}
-            className={`w-full py-3 rounded-lg font-semibold text-white transition 
-              ${loading ? "bg-emerald-400" : "bg-emerald-600 hover:bg-emerald-700"}`}
-          >
-            {loading ? "Creating account..." : "Create Account"}
-          </button>
-        </div>
-
-        <div className="text-center mt-6 text-sm text-gray-500">
-          Already registered?{" "}
-          <span
-            onClick={() => navigate("/login")}
-            className="text-emerald-600 font-medium cursor-pointer hover:underline"
-          >
-            Login
-          </span>
-        </div>
-
-        <p className="text-xs text-center text-gray-400 mt-4">
-          100% Free • No agents • Secure data
+        <p className="mt-6 text-center text-xs text-slate-400">
+          100% free · No agents · Secure data
         </p>
       </div>
     </div>

@@ -8,58 +8,59 @@ export default function MyAssistance() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    (async () => {
-      try {
-        setLoading(true);
-        const data = await getMyAssistanceRequests();
-        setList(data);
-      } catch {
-        setList([]);
-      } finally {
-        setLoading(false);
-      }
-    })();
+    getMyAssistanceRequests()
+      .then(setList)
+      .finally(() => setLoading(false));
   }, []);
 
   return (
-    <div className="p-6">
-      <button onClick={() => navigate("/student")} className="text-indigo-600 text-sm mb-4">
+    <div className="page-container">
+      <button
+        onClick={() => navigate("/student")}
+        className="mb-6 text-sm font-medium text-slate-600 hover:text-teal-600"
+      >
         ← Back to scholarships
       </button>
-      <h2 className="text-xl font-bold mb-4">My assistance requests</h2>
-      {loading && <p>Loading...</p>}
-      {!loading && list.length === 0 && (
-        <p className="text-gray-500">You have no assistance requests.</p>
+      <h1 className="text-2xl font-bold text-slate-900">My assistance requests</h1>
+
+      {loading && (
+        <div className="mt-8 flex justify-center py-12">
+          <div className="loading-dots"><span /><span /><span /></div>
+        </div>
       )}
+
+      {!loading && list.length === 0 && (
+        <div className="empty-state mt-8">
+          <p className="font-medium">No assistance requests yet</p>
+          <p className="mt-1 text-sm">Request help from a scholarship detail page when you need it.</p>
+        </div>
+      )}
+
       {!loading && list.length > 0 && (
-        <div className="space-y-4">
+        <div className="mt-8 space-y-5">
           {list.map((ar) => (
-            <div key={ar._id} className="bg-white p-4 rounded shadow border">
-              <div className="flex justify-between items-start">
+            <div key={ar._id} className="card">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <p className="font-semibold">{ar.scholarshipId?.title || "Scholarship"}</p>
-                  <p className="text-sm text-gray-600">
-                    Moderator: {ar.moderatorId?.name ?? "-"} | Status: {ar.status}
+                  <h2 className="font-semibold text-slate-900">{ar.scholarshipId?.title || "Scholarship"}</h2>
+                  <p className="text-sm text-slate-500">
+                    Moderator: {ar.moderatorId?.name ?? "—"} · {ar.status}
                   </p>
                 </div>
-                <span
-                  className={`px-2 py-0.5 rounded text-xs font-medium ${
-                    ar.status === "OPEN" ? "bg-amber-100 text-amber-800" : "bg-green-100 text-green-800"
-                  }`}
-                >
+                <span className={ar.status === "OPEN" ? "badge-warning" : "badge-success"}>
                   {ar.status}
                 </span>
               </div>
-              <div className="mt-2 border-t pt-2 space-y-1">
+              <div className="mt-4 border-t border-slate-200 pt-4 space-y-2">
                 {(ar.messages || []).map((m, i) => (
-                  <p key={i} className="text-sm">
-                    <span className="font-medium">{m.from}:</span> {m.text}
+                  <p key={i} className="text-sm text-slate-700">
+                    <span className="font-medium text-slate-900">{m.from}:</span> {m.text}
                   </p>
                 ))}
               </div>
               <button
                 onClick={() => navigate(`/student/scholarships/${ar.scholarshipId?._id || ar.scholarshipId}`)}
-                className="mt-2 text-indigo-600 text-sm"
+                className="mt-4 text-sm font-semibold text-teal-600 hover:underline"
               >
                 View scholarship →
               </button>

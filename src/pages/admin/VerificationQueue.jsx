@@ -67,108 +67,67 @@ export default function VerificationQueue() {
   const selected = list.find((s) => s._id === selectedId);
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-lg font-semibold">Scholarship Verification Queue</h2>
-      {error && <p className="text-red-600 text-sm">{error}</p>}
-      {loading && <p className="text-gray-500">Loading...</p>}
+    <div className="mt-8 space-y-6">
+      <h2 className="text-lg font-semibold text-slate-900">Verification queue</h2>
+      {error && <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+      {loading && <div className="flex justify-center py-12"><div className="loading-dots"><span /><span /><span /></div></div>}
 
       {!loading && list.length === 0 && (
-        <p className="text-gray-500">No scholarships in verification queue.</p>
+        <div className="empty-state">No scholarships in verification queue.</div>
       )}
 
       {!loading && list.length > 0 && (
-        <div className="bg-white rounded shadow overflow-hidden">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-gray-100 border-b">
-                <th className="p-2 text-left">Title</th>
-                <th className="p-2 text-left">Risk</th>
-                <th className="p-2 text-left">Created By</th>
-                <th className="p-2 text-left">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {list.map((s) => (
-                <tr key={s._id} className="border-b">
-                  <td className="p-2">{s.title}</td>
-                  <td className="p-2">
-                    <span
-                      className={`px-2 py-0.5 rounded text-xs font-medium ${
-                        (s.riskScore || 0) >= 50
-                          ? "bg-red-100 text-red-800"
-                          : (s.riskScore || 0) >= 25
-                            ? "bg-yellow-100 text-yellow-800"
-                            : "bg-green-100 text-green-800"
-                      }`}
-                    >
-                      {s.riskScore ?? 0}
-                    </span>
-                  </td>
-                  <td className="p-2">{s.createdBy?.name ?? "-"}</td>
-                  <td className="p-2 flex gap-2">
-                    <button
-                      onClick={() => handleVerify(s._id)}
-                      className="bg-green-600 text-white px-2 py-1 rounded text-sm"
-                    >
-                      Verify
-                    </button>
-                    <button
-                      onClick={() => setSelectedId(s._id)}
-                      className="bg-amber-600 text-white px-2 py-1 rounded text-sm"
-                    >
-                      Flag / Note
-                    </button>
-                  </td>
+        <div className="card overflow-hidden p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50/80">
+                  <th className="p-3 text-left text-sm font-semibold text-slate-700">Title</th>
+                  <th className="p-3 text-left text-sm font-semibold text-slate-700">Risk</th>
+                  <th className="p-3 text-left text-sm font-semibold text-slate-700">Created by</th>
+                  <th className="p-3 text-left text-sm font-semibold text-slate-700">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {list.map((s) => (
+                  <tr key={s._id} className="border-b border-slate-100 last:border-0">
+                    <td className="p-3 font-medium text-slate-900">{s.title}</td>
+                    <td className="p-3">
+                      <span className={(s.riskScore || 0) >= 50 ? "badge-danger" : (s.riskScore || 0) >= 25 ? "badge-warning" : "badge-success"}>
+                        {s.riskScore ?? 0}
+                      </span>
+                    </td>
+                    <td className="p-3 text-slate-600">{s.createdBy?.name ?? "—"}</td>
+                    <td className="p-3">
+                      <div className="flex gap-2">
+                        <button onClick={() => handleVerify(s._id)} className="btn-primary !bg-emerald-600 hover:!bg-emerald-700 py-1.5 text-sm">Verify</button>
+                        <button onClick={() => setSelectedId(s._id)} className="btn-accent py-1.5 text-sm">Flag / Note</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
       {selectedId && selected && (
-        <div className="bg-white p-4 rounded shadow border">
-          <h3 className="font-semibold mb-2">Internal notes &amp; flag: {selected.title}</h3>
-          <div className="space-y-2">
-            <textarea
-              placeholder="Flag reason"
-              value={flagReason}
-              onChange={(e) => setFlagReason(e.target.value)}
-              className="border p-2 w-full rounded"
-              rows={2}
-            />
-            <button
-              onClick={() => handleFlag(selectedId)}
-              className="bg-amber-600 text-white px-3 py-1 rounded text-sm"
-            >
-              Flag listing
-            </button>
+        <div className="card">
+          <h3 className="font-semibold text-slate-900">Internal notes & flag: {selected.title}</h3>
+          <div className="mt-4 space-y-4">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700">Flag reason</label>
+              <textarea placeholder="Flag reason" value={flagReason} onChange={(e) => setFlagReason(e.target.value)} className="input-base min-h-[80px]" rows={2} />
+              <button onClick={() => handleFlag(selectedId)} className="btn-accent mt-2">Flag listing</button>
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700">Internal note (not visible to students)</label>
+              <textarea placeholder="Note…" value={note} onChange={(e) => setNote(e.target.value)} className="input-base min-h-[80px]" rows={2} />
+              <button onClick={() => handleAddNote(selectedId)} className="btn-secondary mt-2">Add note</button>
+            </div>
+            <button onClick={() => { setSelectedId(null); setFlagReason(""); setNote(""); }} className="text-sm text-slate-500 hover:text-slate-700">Close</button>
           </div>
-          <div className="mt-4">
-            <textarea
-              placeholder="Internal note (not visible to students)"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              className="border p-2 w-full rounded"
-              rows={2}
-            />
-            <button
-              onClick={() => handleAddNote(selectedId)}
-              className="mt-2 bg-gray-700 text-white px-3 py-1 rounded text-sm"
-            >
-              Add note
-            </button>
-          </div>
-          <button
-            onClick={() => {
-              setSelectedId(null);
-              setFlagReason("");
-              setNote("");
-            }}
-            className="mt-2 text-gray-500 text-sm"
-          >
-            Close
-          </button>
         </div>
       )}
     </div>

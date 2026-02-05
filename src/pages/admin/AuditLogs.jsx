@@ -32,92 +32,59 @@ export default function AuditLogs() {
   }, []);
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-lg font-semibold">Audit Log Viewer</h2>
-      {error && <p className="text-red-600 text-sm">{error}</p>}
+    <div className="mt-8 space-y-6">
+      <h2 className="text-lg font-semibold text-slate-900">Audit logs</h2>
+      {error && <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
 
-      <div className="bg-white p-4 rounded shadow flex flex-wrap gap-4 items-end">
+      <div className="card flex flex-wrap gap-4">
         <div>
-          <label className="block text-xs text-gray-500 mb-1">Actor ID</label>
-          <input
-            type="text"
-            value={actorId}
-            onChange={(e) => setActorId(e.target.value)}
-            placeholder="User ID"
-            className="border p-2 rounded"
-          />
+          <label className="mb-1 block text-xs font-medium text-slate-500">Actor ID</label>
+          <input type="text" value={actorId} onChange={(e) => setActorId(e.target.value)} placeholder="User ID" className="input-base w-40" />
         </div>
         <div>
-          <label className="block text-xs text-gray-500 mb-1">Action type</label>
-          <input
-            type="text"
-            value={actionType}
-            onChange={(e) => setActionType(e.target.value)}
-            placeholder="e.g. CREATE_MODERATOR"
-            className="border p-2 rounded"
-          />
+          <label className="mb-1 block text-xs font-medium text-slate-500">Action type</label>
+          <input type="text" value={actionType} onChange={(e) => setActionType(e.target.value)} placeholder="e.g. CREATE_MODERATOR" className="input-base w-48" />
         </div>
         <div>
-          <label className="block text-xs text-gray-500 mb-1">From date</label>
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className="border p-2 rounded"
-          />
+          <label className="mb-1 block text-xs font-medium text-slate-500">From date</label>
+          <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="input-base w-40" />
         </div>
         <div>
-          <label className="block text-xs text-gray-500 mb-1">To date</label>
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            className="border p-2 rounded"
-          />
+          <label className="mb-1 block text-xs font-medium text-slate-500">To date</label>
+          <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="input-base w-40" />
         </div>
-        <button
-          onClick={fetchLogs}
-          className="bg-indigo-600 text-white px-4 py-2 rounded"
-        >
-          Apply filters
-        </button>
+        <button onClick={fetchLogs} className="btn-primary self-end">Apply filters</button>
       </div>
 
-      {loading && <p className="text-gray-500">Loading...</p>}
+      {loading && <div className="flex justify-center py-12"><div className="loading-dots"><span /><span /><span /></div></div>}
 
       {!loading && (
-        <div className="bg-white rounded shadow overflow-x-auto">
-          <table className="w-full border-collapse min-w-[600px]">
-            <thead>
-              <tr className="bg-gray-100 border-b">
-                <th className="p-2 text-left">Time</th>
-                <th className="p-2 text-left">Actor</th>
-                <th className="p-2 text-left">Action</th>
-                <th className="p-2 text-left">Entity</th>
-                <th className="p-2 text-left">Entity ID</th>
-              </tr>
-            </thead>
-            <tbody>
-              {logs.map((log) => (
-                <tr key={log._id} className="border-b">
-                  <td className="p-2 text-sm text-gray-600">
-                    {log.createdAt ? new Date(log.createdAt).toLocaleString() : "-"}
-                  </td>
-                  <td className="p-2">
-                    {log.actorId?.name ?? log.actorId ?? "-"} ({log.actorRole})
-                  </td>
-                  <td className="p-2 font-mono text-sm">{log.actionType}</td>
-                  <td className="p-2">{log.entityType}</td>
-                  <td className="p-2 text-sm truncate max-w-[120px]">
-                    {log.entityId?.toString?.() ?? String(log.entityId)}
-                  </td>
+        <div className="card overflow-hidden p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[600px]">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50/80">
+                  <th className="p-3 text-left text-sm font-semibold text-slate-700">Time</th>
+                  <th className="p-3 text-left text-sm font-semibold text-slate-700">Actor</th>
+                  <th className="p-3 text-left text-sm font-semibold text-slate-700">Action</th>
+                  <th className="p-3 text-left text-sm font-semibold text-slate-700">Entity</th>
+                  <th className="p-3 text-left text-sm font-semibold text-slate-700">Entity ID</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          {logs.length === 0 && (
-            <p className="p-4 text-gray-500">No audit logs match the filters.</p>
-          )}
+              </thead>
+              <tbody>
+                {logs.map((log) => (
+                  <tr key={log._id} className="border-b border-slate-100 last:border-0">
+                    <td className="p-3 text-sm text-slate-600">{log.createdAt ? new Date(log.createdAt).toLocaleString() : "—"}</td>
+                    <td className="p-3">{log.actorId?.name ?? log.actorId ?? "—"} <span className="text-slate-400">({log.actorRole})</span></td>
+                    <td className="p-3 font-mono text-sm">{log.actionType}</td>
+                    <td className="p-3">{log.entityType}</td>
+                    <td className="p-3 truncate max-w-[140px] text-sm text-slate-500">{log.entityId?.toString?.() ?? String(log.entityId)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {logs.length === 0 && <p className="p-6 text-center text-slate-500">No audit logs match the filters.</p>}
         </div>
       )}
     </div>

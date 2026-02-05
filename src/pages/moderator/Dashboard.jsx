@@ -284,72 +284,34 @@ export default function ModeratorDashboard() {
     }
   }, [view]);
 
-  /* =========================
-     UI
-  ========================= */
+  const tabClass = (v) =>
+    view === v ? "bg-teal-600 text-white shadow-sm" : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50";
+
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <h1 className="text-2xl font-bold mb-6">Moderator Dashboard</h1>
+    <div className="page-container">
+      <h1 className="text-2xl font-bold text-slate-900">Moderator Dashboard</h1>
 
-      {/* VIEW SWITCH */}
-      <div className="flex gap-4 mb-6">
-        <button
-          onClick={() => navigate("/moderator")}
-          className={`px-4 py-2 rounded ${
-            view === "CREATE"
-              ? "bg-indigo-600 text-white"
-              : "bg-gray-200"
-          }`}
-        >
-          Create Scholarship
+      <div className="mt-6 flex flex-wrap gap-2">
+        <button onClick={() => navigate("/moderator")} className={`rounded-lg px-4 py-2 text-sm font-medium transition ${tabClass("CREATE")}`}>
+          Create scholarship
         </button>
-
-        <button
-          onClick={() => navigate("/moderator/my-scholarships")}
-          className={`px-4 py-2 rounded ${view === "MY_SCHOLARSHIPS" ? "bg-indigo-600 text-white" : "bg-gray-200"}`}
-        >
-          My Scholarships
+        <button onClick={() => navigate("/moderator/my-scholarships")} className={`rounded-lg px-4 py-2 text-sm font-medium transition ${tabClass("MY_SCHOLARSHIPS")}`}>
+          My scholarships
         </button>
-        <button
-          onClick={() => navigate("/moderator/assistance")}
-          className={`px-4 py-2 rounded ${view === "ASSISTANCE" ? "bg-indigo-600 text-white" : "bg-gray-200"}`}
-        >
+        <button onClick={() => navigate("/moderator/assistance")} className={`rounded-lg px-4 py-2 text-sm font-medium transition ${tabClass("ASSISTANCE")}`}>
           Assistance
         </button>
-        <button
-          onClick={() => navigate("/moderator/applications")}
-          className={`px-4 py-2 rounded ${view === "APPLICATIONS" ? "bg-indigo-600 text-white" : "bg-gray-200"}`}
-        >
-          Application Progress
+        <button onClick={() => navigate("/moderator/applications")} className={`rounded-lg px-4 py-2 text-sm font-medium transition ${tabClass("APPLICATIONS")}`}>
+          Applications
         </button>
       </div>
 
-      {/* =========================
-         CREATE SCHOLARSHIP
-      ========================= */}
       {view === "CREATE" && (
-        <div className="bg-white p-6 rounded shadow max-w-2xl">
-          <h2 className="text-lg font-semibold mb-4">
-            Create Scholarship
-          </h2>
+        <div className="card mt-8 max-w-2xl">
+          <h2 className="text-lg font-semibold text-slate-900">Create scholarship</h2>
 
-          {/* BASIC */}
-          <input
-            type="text"
-            placeholder="Scholarship Title"
-            value={form.title}
-            onChange={e => setForm({ ...form, title: e.target.value })}
-            className="border p-2 w-full mb-2"
-          />
-
-          <textarea
-            placeholder="Description"
-            value={form.description}
-            onChange={e =>
-              setForm({ ...form, description: e.target.value })
-            }
-            className="border p-2 w-full mb-4"
-          />
+          <input type="text" placeholder="Scholarship title" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} className="input-base mt-4 mb-2" />
+          <textarea placeholder="Description" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className="input-base min-h-[100px] resize-y mb-4" />
 
           {/* PROVIDER */}
           <h3 className="font-semibold mb-2">Provider</h3>
@@ -361,7 +323,7 @@ export default function ModeratorDashboard() {
             onChange={e =>
               setForm({ ...form, providerName: e.target.value })
             }
-            className="border p-2 w-full mb-2"
+            className="input-base mb-2"
           />
 
           <input
@@ -371,7 +333,7 @@ export default function ModeratorDashboard() {
             onChange={e =>
               setForm({ ...form, providerWebsite: e.target.value })
             }
-            className="border p-2 w-full mb-2"
+            className="input-base mb-2"
           />
 
           <select
@@ -379,7 +341,7 @@ export default function ModeratorDashboard() {
             onChange={e =>
               setForm({ ...form, providerType: e.target.value })
             }
-            className="border p-2 w-full mb-4"
+            className="input-base mb-4"
           >
             <option value="GOVERNMENT">Government</option>
             <option value="NGO">NGO</option>
@@ -397,7 +359,7 @@ export default function ModeratorDashboard() {
             onChange={e =>
               setForm({ ...form, amount: e.target.value })
             }
-            className="border p-2 w-full mb-2"
+            className="input-base mb-2"
           />
 
           <input
@@ -407,7 +369,7 @@ export default function ModeratorDashboard() {
             onChange={e =>
               setForm({ ...form, benefits: e.target.value })
             }
-            className="border p-2 w-full mb-4"
+            className="input-base mb-4"
           />
 
           {/* ELIGIBILITY */}
@@ -420,7 +382,7 @@ export default function ModeratorDashboard() {
             onChange={e =>
               setForm({ ...form, minMarks: e.target.value })
             }
-            className="border p-2 w-full mb-2"
+            className="input-base mb-2"
           />
 
           <input
@@ -430,7 +392,7 @@ export default function ModeratorDashboard() {
             onChange={e =>
               setForm({ ...form, maxIncome: e.target.value })
             }
-            className="border p-2 w-full mb-2"
+            className="input-base mb-2"
           />
 
           <select
@@ -438,7 +400,7 @@ export default function ModeratorDashboard() {
             onChange={e =>
               setForm({ ...form, gender: e.target.value })
             }
-            className="border p-2 w-full mb-2"
+            className="input-base mb-2"
           >
             <option value="ANY">Any</option>
             <option value="MALE">Male</option>
@@ -450,7 +412,7 @@ export default function ModeratorDashboard() {
             onChange={e =>
               setForm({ ...form, educationLevel: e.target.value })
             }
-            className="border p-2 w-full mb-2"
+            className="input-base mb-2"
           >
             <option value="DIPLOMA">Diploma</option>
             <option value="UG">UG</option>
@@ -465,7 +427,7 @@ export default function ModeratorDashboard() {
             onChange={e =>
               setForm({ ...form, statesAllowed: e.target.value })
             }
-            className="border p-2 w-full mb-4"
+            className="input-base mb-4"
           />
 
           {/* DOCUMENTS */}
@@ -478,7 +440,7 @@ export default function ModeratorDashboard() {
             onChange={e =>
               setForm({ ...form, documentsRequired: e.target.value })
             }
-            className="border p-2 w-full mb-4"
+            className="input-base mb-4"
           />
 
           {/* APPLICATION */}
@@ -489,7 +451,7 @@ export default function ModeratorDashboard() {
             onChange={e =>
               setForm({ ...form, applicationMode: e.target.value })
             }
-            className="border p-2 w-full mb-2"
+            className="input-base mb-2"
           >
             <option value="ONLINE">Online</option>
             <option value="OFFLINE">Offline</option>
@@ -503,7 +465,7 @@ export default function ModeratorDashboard() {
             onChange={e =>
               setForm({ ...form, applyLink: e.target.value })
             }
-            className="border p-2 w-full mb-2"
+            className="input-base mb-2"
           />
 
           <textarea
@@ -512,7 +474,7 @@ export default function ModeratorDashboard() {
             onChange={e =>
               setForm({ ...form, applicationSteps: e.target.value })
             }
-            className="border p-2 w-full mb-4"
+            className="input-base mb-4"
           />
 
           {/* DEADLINE */}
@@ -523,237 +485,118 @@ export default function ModeratorDashboard() {
             onChange={e =>
               setForm({ ...form, deadline: e.target.value })
             }
-            className="border p-2 w-full mb-4"
+            className="input-base mb-4"
           />
 
-          <button
-            disabled={loading}
-            onClick={handleCreate}
-            className="bg-indigo-600 text-white px-4 py-2 rounded"
-          >
-            {loading ? "Submitting..." : "Submit for Review"}
+          <button disabled={loading} onClick={handleCreate} className="btn-primary mt-4">
+            {loading ? "Submitting…" : "Submit for review"}
           </button>
         </div>
       )}
 
-      {/* =========================
-         MY SCHOLARSHIPS
-      ========================= */}
       {view === "MY_SCHOLARSHIPS" && (
-        <div className="bg-white p-6 rounded shadow">
-          <h2 className="text-lg font-semibold mb-4">
-            My Scholarships
-          </h2>
-
-          {loading && <p>Loading...</p>}
-
-          {!loading && myScholarships.length === 0 && (
-            <p>No scholarships created yet</p>
-          )}
-
+        <div className="card mt-8">
+          <h2 className="text-lg font-semibold text-slate-900">My scholarships</h2>
+          {loading && <div className="mt-6 flex justify-center py-8"><div className="loading-dots"><span /><span /><span /></div></div>}
+          {!loading && myScholarships.length === 0 && <div className="empty-state mt-6">No scholarships created yet.</div>}
           {!loading && myScholarships.length > 0 && (
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="bg-gray-200">
-                  <th className="p-2 text-left">Title</th>
-                  <th className="p-2 text-left">Provider</th>
-                  <th className="p-2 text-left">Amount</th>
-                  <th className="p-2 text-left">Deadline</th>
-                  <th className="p-2 text-left">Status</th>
-                  <th className="p-2 text-left">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {myScholarships.map((s) => (
-                  <tr key={s._id} className="border-t">
-                    <td className="p-2">{s.title}</td>
-                    <td className="p-2">{s.provider?.type}</td>
-                    <td className="p-2">₹{s.amount}</td>
-                    <td className="p-2">{new Date(s.deadline).toLocaleDateString()}</td>
-                    <td className="p-2 font-semibold">
-                      {s.status === "PENDING" && <span className="text-yellow-600">Pending</span>}
-                      {s.status === "APPROVED" && <span className="text-green-600">Approved</span>}
-                      {s.status === "REJECTED" && <span className="text-red-600">Rejected</span>}
-                    </td>
-                    <td className="p-2">
-                      {s.status === "REJECTED" && (
-                        <>
-                          <button
-                            onClick={() => {
-                              setEditingId(s._id);
-                              fillFormFromScholarship(s);
-                              setView("EDIT");
-                            }}
-                            className="bg-amber-600 text-white px-2 py-1 rounded text-sm mr-1"
-                          >
-                            Edit &amp; Re-submit
-                          </button>
-                        </>
-                      )}
-                      {s.status === "PENDING" && (
-                        <>
-                          <button
-                            onClick={() => {
-                              setEditingId(s._id);
-                              fillFormFromScholarship(s);
-                              setView("EDIT");
-                            }}
-                            className="bg-gray-600 text-white px-2 py-1 rounded text-sm mr-1"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleWithdraw(s._id)}
-                            className="bg-red-600 text-white px-2 py-1 rounded text-sm"
-                          >
-                            Withdraw
-                          </button>
-                        </>
-                      )}
-                    </td>
+            <div className="mt-6 overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-slate-200 bg-slate-50/80">
+                    <th className="p-3 text-left text-sm font-semibold text-slate-700">Title</th>
+                    <th className="p-3 text-left text-sm font-semibold text-slate-700">Provider</th>
+                    <th className="p-3 text-left text-sm font-semibold text-slate-700">Amount</th>
+                    <th className="p-3 text-left text-sm font-semibold text-slate-700">Deadline</th>
+                    <th className="p-3 text-left text-sm font-semibold text-slate-700">Status</th>
+                    <th className="p-3 text-left text-sm font-semibold text-slate-700">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {myScholarships.map((s) => (
+                    <tr key={s._id} className="border-b border-slate-100 last:border-0">
+                      <td className="p-3 font-medium text-slate-900">{s.title}</td>
+                      <td className="p-3 text-slate-600">{s.provider?.type}</td>
+                      <td className="p-3">₹{s.amount?.toLocaleString?.() ?? s.amount}</td>
+                      <td className="p-3 text-slate-600">{new Date(s.deadline).toLocaleDateString()}</td>
+                      <td className="p-3">
+                        <span className={s.status === "PENDING" ? "badge-warning" : s.status === "APPROVED" ? "badge-success" : "badge-danger"}>{s.status}</span>
+                      </td>
+                      <td className="p-3">
+                        {s.status === "REJECTED" && (
+                          <button onClick={() => { setEditingId(s._id); fillFormFromScholarship(s); setView("EDIT"); }} className="btn-accent mr-1 py-1.5 text-sm">Edit & re-submit</button>
+                        )}
+                        {s.status === "PENDING" && (
+                          <>
+                            <button onClick={() => { setEditingId(s._id); fillFormFromScholarship(s); setView("EDIT"); }} className="btn-secondary mr-1 py-1.5 text-sm">Edit</button>
+                            <button onClick={() => handleWithdraw(s._id)} className="btn-danger py-1.5 text-sm">Withdraw</button>
+                          </>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
           {myScholarships.some((s) => s.status === "REJECTED") && (
-            <div className="mt-4 space-y-2">
-              <h3 className="font-semibold">Rejection reasons</h3>
-              {myScholarships
-                .filter((s) => s.status === "REJECTED" && s.reviewRemarks)
-                .map((s) => (
-                  <div key={s._id} className="border p-2 rounded bg-red-50">
-                    <strong>{s.title}</strong>: {s.reviewRemarks}
-                  </div>
-                ))}
+            <div className="mt-6 space-y-2 border-t border-slate-200 pt-6">
+              <h3 className="font-semibold text-slate-900">Rejection reasons</h3>
+              {myScholarships.filter((s) => s.status === "REJECTED" && s.reviewRemarks).map((s) => (
+                <div key={s._id} className="rounded-lg border border-red-200 bg-red-50/80 p-3 text-sm">
+                  <strong className="text-slate-900">{s.title}</strong>: <span className="text-red-800">{s.reviewRemarks}</span>
+                </div>
+              ))}
             </div>
           )}
         </div>
       )}
 
       {view === "EDIT" && editingId && (
-        <div className="bg-white p-6 rounded shadow max-w-2xl">
-          <h2 className="text-lg font-semibold mb-4">Edit scholarship (resubmit for review)</h2>
-          <input
-            type="text"
-            placeholder="Scholarship Title"
-            value={form.title}
-            onChange={(e) => setForm({ ...form, title: e.target.value })}
-            className="border p-2 w-full mb-2"
-          />
-          <textarea
-            placeholder="Description"
-            value={form.description}
-            onChange={(e) => setForm({ ...form, description: e.target.value })}
-            className="border p-2 w-full mb-4"
-          />
-          <input
-            type="number"
-            placeholder="Amount"
-            value={form.amount}
-            onChange={(e) => setForm({ ...form, amount: e.target.value })}
-            className="border p-2 w-full mb-2"
-          />
-          <input
-            type="date"
-            min={new Date().toISOString().split("T")[0]}
-            value={form.deadline}
-            onChange={(e) => setForm({ ...form, deadline: e.target.value })}
-            className="border p-2 w-full mb-4"
-          />
-          <div className="flex gap-2">
-            <button
-              disabled={loading}
-              onClick={handleUpdateScholarship}
-              className="bg-indigo-600 text-white px-4 py-2 rounded"
-            >
-              Update &amp; Re-submit
-            </button>
-            <button
-              onClick={() => { setEditingId(null); setView("MY_SCHOLARSHIPS"); }}
-              className="bg-gray-200 px-4 py-2 rounded"
-            >
-              Cancel
-            </button>
+        <div className="card mt-8 max-w-2xl">
+          <h2 className="text-lg font-semibold text-slate-900">Edit scholarship (resubmit for review)</h2>
+          <input type="text" placeholder="Scholarship title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="input-base mt-4 mb-2" />
+          <textarea placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="input-base min-h-[80px] mb-4" />
+          <input type="number" placeholder="Amount" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} className="input-base mb-2" />
+          <input type="date" min={new Date().toISOString().split("T")[0]} value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} className="input-base mb-4" />
+          <div className="flex gap-3">
+            <button disabled={loading} onClick={handleUpdateScholarship} className="btn-primary">Update & re-submit</button>
+            <button onClick={() => { setEditingId(null); setView("MY_SCHOLARSHIPS"); }} className="btn-secondary">Cancel</button>
           </div>
         </div>
       )}
 
       {view === "ASSISTANCE" && (
-        <div className="bg-white p-6 rounded shadow">
-          <h2 className="text-lg font-semibold mb-4">Assistance inbox</h2>
-          <div className="flex gap-2 mb-4">
-            <button
-              onClick={() => setAssistanceFilter("")}
-              className={`px-3 py-1 rounded ${!assistanceFilter ? "bg-indigo-600 text-white" : "bg-gray-200"}`}
-            >
-              All
-            </button>
-            <button
-              onClick={() => setAssistanceFilter("OPEN")}
-              className={`px-3 py-1 rounded ${assistanceFilter === "OPEN" ? "bg-indigo-600 text-white" : "bg-gray-200"}`}
-            >
-              Open
-            </button>
-            <button
-              onClick={() => setAssistanceFilter("RESOLVED")}
-              className={`px-3 py-1 rounded ${assistanceFilter === "RESOLVED" ? "bg-indigo-600 text-white" : "bg-gray-200"}`}
-            >
-              Resolved
-            </button>
+        <div className="card mt-8">
+          <h2 className="text-lg font-semibold text-slate-900">Assistance inbox</h2>
+          <div className="mt-4 flex gap-2">
+            <button onClick={() => setAssistanceFilter("")} className={`rounded-lg px-3 py-1.5 text-sm font-medium ${!assistanceFilter ? "bg-teal-600 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}>All</button>
+            <button onClick={() => setAssistanceFilter("OPEN")} className={`rounded-lg px-3 py-1.5 text-sm font-medium ${assistanceFilter === "OPEN" ? "bg-teal-600 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}>Open</button>
+            <button onClick={() => setAssistanceFilter("RESOLVED")} className={`rounded-lg px-3 py-1.5 text-sm font-medium ${assistanceFilter === "RESOLVED" ? "bg-teal-600 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}>Resolved</button>
           </div>
-          {loading && <p>Loading...</p>}
-          {!loading && assistanceList.length === 0 && <p className="text-gray-500">No assistance requests.</p>}
+          {loading && <div className="mt-6 flex justify-center py-8"><div className="loading-dots"><span /><span /><span /></div></div>}
+          {!loading && assistanceList.length === 0 && <div className="empty-state mt-6">No assistance requests.</div>}
           {!loading && assistanceList.length > 0 && (
-            <div className="space-y-4">
+            <div className="mt-6 space-y-4">
               {assistanceList.map((ar) => (
-                <div key={ar._id} className="border rounded p-4">
+                <div key={ar._id} className="rounded-xl border border-slate-200 bg-white p-4">
                   <div className="flex justify-between items-start">
                     <div>
-                      <p className="font-semibold">{ar.scholarshipId?.title}</p>
-                      <p className="text-sm text-gray-600">Student: {ar.studentId?.name} ({ar.studentId?.email})</p>
-                      <p className={`text-sm font-medium ${ar.status === "OPEN" ? "text-amber-600" : "text-green-600"}`}>
-                        {ar.status}
-                      </p>
+                      <p className="font-semibold text-slate-900">{ar.scholarshipId?.title}</p>
+                      <p className="text-sm text-slate-500">Student: {ar.studentId?.name} ({ar.studentId?.email})</p>
+                      <span className={ar.status === "OPEN" ? "badge-warning" : "badge-success"}>{ar.status}</span>
                     </div>
-                    {ar.status === "OPEN" && (
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleResolve(ar._id)}
-                          className="bg-green-600 text-white px-2 py-1 rounded text-sm"
-                        >
-                          Resolve
-                        </button>
-                      </div>
-                    )}
+                    {ar.status === "OPEN" && <button onClick={() => handleResolve(ar._id)} className="btn-primary !bg-emerald-600 hover:!bg-emerald-700 py-1.5 text-sm">Resolve</button>}
                   </div>
-                  <div className="mt-2 border-t pt-2 space-y-1">
+                  <div className="mt-3 border-t border-slate-200 pt-3 space-y-1">
                     {(ar.messages || []).map((m, i) => (
-                      <p key={i} className="text-sm">
-                        <span className="font-medium">{m.from}:</span> {m.text}
-                      </p>
+                      <p key={i} className="text-sm text-slate-700"><span className="font-medium">{m.from}:</span> {m.text}</p>
                     ))}
                   </div>
                   {ar.status === "OPEN" && (
-                    <div className="mt-2 flex gap-2">
-                      <input
-                        type="text"
-                        placeholder="Reply..."
-                        value={replyingId === ar._id ? replyText : ""}
-                        onChange={(e) => {
-                          setReplyingId(ar._id);
-                          setReplyText(e.target.value);
-                        }}
-                        onFocus={() => setReplyingId(ar._id)}
-                        className="border p-2 flex-1 rounded"
-                      />
-                      <button
-                        onClick={() => handleReply(ar._id)}
-                        disabled={!(replyingId === ar._id && replyText.trim())}
-                        className="bg-indigo-600 text-white px-3 py-1 rounded disabled:opacity-50"
-                      >
-                        Send
-                      </button>
+                    <div className="mt-3 flex gap-2">
+                      <input type="text" placeholder="Reply…" value={replyingId === ar._id ? replyText : ""} onChange={(e) => { setReplyingId(ar._id); setReplyText(e.target.value); }} onFocus={() => setReplyingId(ar._id)} className="input-base flex-1" />
+                      <button onClick={() => handleReply(ar._id)} disabled={!(replyingId === ar._id && replyText.trim())} className="btn-primary disabled:opacity-50">Send</button>
                     </div>
                   )}
                 </div>
@@ -764,18 +607,15 @@ export default function ModeratorDashboard() {
       )}
 
       {view === "APPLICATIONS" && (
-        <div className="bg-white p-6 rounded shadow">
-          <h2 className="text-lg font-semibold mb-4">Application progress</h2>
+        <div className="card mt-8">
+          <h2 className="text-lg font-semibold text-slate-900">Application progress</h2>
           {!applicationsScholarshipId ? (
             <>
-              <p className="text-gray-600 mb-2">Select a scholarship:</p>
-              <ul className="list-disc list-inside">
+              <p className="mt-2 text-slate-600">Select a scholarship:</p>
+              <ul className="mt-3 space-y-1">
                 {myScholarships.map((s) => (
                   <li key={s._id}>
-                    <button
-                      onClick={() => { setApplicationsScholarshipId(s._id); fetchApplications(s._id); }}
-                      className="text-indigo-600 underline"
-                    >
+                    <button onClick={() => { setApplicationsScholarshipId(s._id); fetchApplications(s._id); }} className="text-teal-600 font-medium hover:underline">
                       {s.title}
                     </button>
                   </li>
@@ -784,32 +624,29 @@ export default function ModeratorDashboard() {
             </>
           ) : (
             <>
-              <button
-                onClick={() => { setApplicationsScholarshipId(null); setApplicationsList([]); }}
-                className="text-gray-500 text-sm mb-2"
-              >
-                ← Back
-              </button>
-              {loading && <p>Loading...</p>}
+              <button onClick={() => { setApplicationsScholarshipId(null); setApplicationsList([]); }} className="mt-2 text-sm text-slate-500 hover:text-slate-700">← Back</button>
+              {loading && <div className="mt-6 flex justify-center py-8"><div className="loading-dots"><span /><span /><span /></div></div>}
               {!loading && (
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="bg-gray-200">
-                      <th className="p-2 text-left">Student</th>
-                      <th className="p-2 text-left">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {applicationsList.map((a) => (
-                      <tr key={a._id} className="border-t">
-                        <td className="p-2">{a.studentId?.name} ({a.studentId?.email})</td>
-                        <td className="p-2">{a.status}</td>
+                <div className="mt-6 overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-slate-200 bg-slate-50/80">
+                        <th className="p-3 text-left text-sm font-semibold text-slate-700">Student</th>
+                        <th className="p-3 text-left text-sm font-semibold text-slate-700">Status</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {applicationsList.map((a) => (
+                        <tr key={a._id} className="border-b border-slate-100 last:border-0">
+                          <td className="p-3">{a.studentId?.name} ({a.studentId?.email})</td>
+                          <td className="p-3"><span className="badge-neutral">{a.status}</span></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
-              {!loading && applicationsList.length === 0 && <p className="text-gray-500">No applications for this scholarship.</p>}
+              {!loading && applicationsList.length === 0 && <p className="mt-6 text-slate-500">No applications for this scholarship.</p>}
             </>
           )}
         </div>

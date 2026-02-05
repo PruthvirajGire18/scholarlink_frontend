@@ -38,99 +38,58 @@ export default function DocumentReview() {
   const doc = list.find((d) => d._id === reviewingId);
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-lg font-semibold">Document Review Panel</h2>
-      {error && <p className="text-red-600 text-sm">{error}</p>}
-      {loading && <p className="text-gray-500">Loading...</p>}
+    <div className="mt-8 space-y-6">
+      <h2 className="text-lg font-semibold text-slate-900">Document review</h2>
+      {error && <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+      {loading && <div className="flex justify-center py-12"><div className="loading-dots"><span /><span /><span /></div></div>}
 
-      {!loading && list.length === 0 && (
-        <p className="text-gray-500">No pending documents.</p>
-      )}
+      {!loading && list.length === 0 && <div className="empty-state">No pending documents.</div>}
 
       {!loading && list.length > 0 && (
-        <div className="grid md:grid-cols-2 gap-4">
-          <div className="bg-white rounded shadow overflow-hidden">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="bg-gray-100 border-b">
-                  <th className="p-2 text-left">Type</th>
-                  <th className="p-2 text-left">User</th>
-                  <th className="p-2 text-left">Scholarship</th>
-                  <th className="p-2 text-left">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {list.map((d) => (
-                  <tr key={d._id} className="border-b">
-                    <td className="p-2">{d.documentType}</td>
-                    <td className="p-2">{d.userId?.name ?? "-"}</td>
-                    <td className="p-2">{d.scholarshipId?.title ?? "-"}</td>
-                    <td className="p-2">
-                      <button
-                        onClick={() => setReviewingId(d._id)}
-                        className="bg-indigo-600 text-white px-2 py-1 rounded text-sm"
-                      >
-                        Review
-                      </button>
-                    </td>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <div className="card overflow-hidden p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-slate-200 bg-slate-50/80">
+                    <th className="p-3 text-left text-sm font-semibold text-slate-700">Type</th>
+                    <th className="p-3 text-left text-sm font-semibold text-slate-700">User</th>
+                    <th className="p-3 text-left text-sm font-semibold text-slate-700">Scholarship</th>
+                    <th className="p-3 text-left text-sm font-semibold text-slate-700">Action</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {list.map((d) => (
+                    <tr key={d._id} className="border-b border-slate-100 last:border-0">
+                      <td className="p-3 font-medium">{d.documentType}</td>
+                      <td className="p-3 text-slate-600">{d.userId?.name ?? "—"}</td>
+                      <td className="p-3 text-slate-600">{d.scholarshipId?.title ?? "—"}</td>
+                      <td className="p-3">
+                        <button onClick={() => setReviewingId(d._id)} className="btn-primary py-1.5 text-sm">Review</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-
-          <div className="bg-white rounded shadow p-4">
+          <div className="card">
             {doc ? (
               <>
-                <h3 className="font-semibold mb-2">Review: {doc.documentType}</h3>
-                <p className="text-sm text-gray-600 mb-2">
-                  User: {doc.userId?.name} | Scholarship: {doc.scholarshipId?.title}
-                </p>
+                <h3 className="font-semibold text-slate-900">Review: {doc.documentType}</h3>
+                <p className="mt-1 text-sm text-slate-500">User: {doc.userId?.name} · {doc.scholarshipId?.title}</p>
                 {doc.fileUrl && (
-                  <div className="mb-4">
-                    <a
-                      href={doc.fileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-indigo-600 underline"
-                    >
-                      Open file
-                    </a>
-                  </div>
+                  <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="mt-3 inline-block text-sm font-medium text-teal-600 hover:underline">Open file →</a>
                 )}
-                <input
-                  type="text"
-                  placeholder="Rejection reason (if rejecting)"
-                  value={rejectionReason}
-                  onChange={(e) => setRejectionReason(e.target.value)}
-                  className="border p-2 w-full rounded mb-2"
-                />
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleReview(doc._id, "APPROVED")}
-                    className="bg-green-600 text-white px-3 py-1 rounded"
-                  >
-                    Approve
-                  </button>
-                  <button
-                    onClick={() => handleReview(doc._id, "REJECTED")}
-                    className="bg-red-600 text-white px-3 py-1 rounded"
-                  >
-                    Reject
-                  </button>
-                  <button
-                    onClick={() => {
-                      setReviewingId(null);
-                      setRejectionReason("");
-                    }}
-                    className="text-gray-500"
-                  >
-                    Cancel
-                  </button>
+                <input type="text" placeholder="Rejection reason (if rejecting)" value={rejectionReason} onChange={(e) => setRejectionReason(e.target.value)} className="input-base mt-4" />
+                <div className="mt-4 flex gap-2">
+                  <button onClick={() => handleReview(doc._id, "APPROVED")} className="btn-primary !bg-emerald-600 hover:!bg-emerald-700">Approve</button>
+                  <button onClick={() => handleReview(doc._id, "REJECTED")} className="btn-danger py-2">Reject</button>
+                  <button onClick={() => { setReviewingId(null); setRejectionReason(""); }} className="btn-secondary">Cancel</button>
                 </div>
               </>
             ) : (
-              <p className="text-gray-500">Select a document to review.</p>
+              <p className="text-slate-500">Select a document to review.</p>
             )}
           </div>
         </div>

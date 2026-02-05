@@ -3,7 +3,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 export default function Login() {
-  const [form, setForm] = useState({});
+  const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPass, setShowPass] = useState(false);
@@ -11,7 +11,8 @@ export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const submit = async () => {
+  const submit = async (e) => {
+    e?.preventDefault();
     setError("");
     setLoading(true);
     try {
@@ -19,7 +20,7 @@ export default function Login() {
       if (role === "STUDENT") navigate("/student");
       if (role === "MODERATOR") navigate("/moderator");
       if (role === "ADMIN") navigate("/admin");
-    } catch (err) {
+    } catch {
       setError("Invalid email or password");
     } finally {
       setLoading(false);
@@ -27,73 +28,87 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-indigo-100">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-teal-50 px-4 py-12">
+      <div className="w-full max-w-md">
+        <div className="card border-0 shadow-xl">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-teal-600">ScholarLink</h1>
+            <p className="mt-1 text-sm text-slate-500">
+              Verified scholarships · Trusted platform
+            </p>
+          </div>
 
-        {/* Branding */}
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-extrabold text-indigo-700">
-            ScholarLink
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Verified Scholarships • Trusted Platform
+          {error && (
+            <div
+              role="alert"
+              className="mt-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700"
+            >
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={submit} className="mt-6 space-y-5">
+            <div>
+              <label htmlFor="login-email" className="mb-1.5 block text-sm font-medium text-slate-700">
+                Email
+              </label>
+              <input
+                id="login-email"
+                type="email"
+                autoComplete="email"
+                placeholder="you@example.com"
+                value={form.email}
+                onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                className="input-base"
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="login-password" className="mb-1.5 block text-sm font-medium text-slate-700">
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  id="login-password"
+                  type={showPass ? "text" : "password"}
+                  autoComplete="current-password"
+                  placeholder="••••••••"
+                  value={form.password}
+                  onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+                  className="input-base pr-24"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPass(!showPass)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-teal-600 hover:text-teal-700"
+                >
+                  {showPass ? "Hide" : "Show"}
+                </button>
+              </div>
+            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn-primary w-full py-3"
+            >
+              {loading ? "Signing in…" : "Log in"}
+            </button>
+          </form>
+
+          <p className="mt-6 text-center text-sm text-slate-500">
+            New student?{" "}
+            <button
+              type="button"
+              onClick={() => navigate("/signup")}
+              className="font-semibold text-teal-600 hover:text-teal-700 hover:underline"
+            >
+              Create account
+            </button>
           </p>
         </div>
-
-        {/* Error */}
-        {error && (
-          <div className="bg-red-50 text-red-600 text-sm p-2 rounded mb-4 text-center">
-            {error}
-          </div>
-        )}
-
-        {/* Inputs */}
-        <div className="space-y-4">
-          <input
-            type="email"
-            placeholder="Email address"
-            className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-            onChange={(e) => setForm({ ...form, email: e.target.value })}
-          />
-
-          <div className="relative">
-            <input
-              type={showPass ? "text" : "password"}
-              placeholder="Password"
-              className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-            />
-            <span
-              onClick={() => setShowPass(!showPass)}
-              className="absolute right-4 top-3 text-sm text-indigo-600 cursor-pointer"
-            >
-              {showPass ? "Hide" : "Show"}
-            </span>
-          </div>
-
-          <button
-            onClick={submit}
-            disabled={loading}
-            className={`w-full py-3 rounded-lg font-semibold text-white transition 
-              ${loading ? "bg-indigo-400" : "bg-indigo-600 hover:bg-indigo-700"}`}
-          >
-            {loading ? "Signing in..." : "Login"}
-          </button>
-        </div>
-
-        {/* Footer */}
-        <div className="text-center mt-6 text-sm text-gray-500">
-          New student?{" "}
-          <span
-            onClick={() => navigate("/signup")}
-            className="text-indigo-600 font-medium cursor-pointer hover:underline"
-          >
-            Create account
-          </span>
-        </div>
-
-        <p className="text-xs text-center text-gray-400 mt-4">
-          Used by students across India 🇮🇳
+        <p className="mt-6 text-center text-xs text-slate-400">
+          Used by students across India
         </p>
       </div>
     </div>
