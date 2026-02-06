@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "../i18n";
 
 export default function Login() {
+  const { t } = useTranslation();
   const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -21,7 +23,7 @@ export default function Login() {
       if (role === "MODERATOR") navigate("/moderator");
       if (role === "ADMIN") navigate("/admin");
     } catch {
-      setError("Invalid email or password");
+      setError(t("auth.invalidCredentials"));
     } finally {
       setLoading(false);
     }
@@ -32,9 +34,9 @@ export default function Login() {
       <div className="w-full max-w-md">
         <div className="card border-0 shadow-xl">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-teal-600">ScholarLink</h1>
+            <h1 className="text-2xl font-bold text-teal-600">{t("nav.brand")}</h1>
             <p className="mt-1 text-sm text-slate-500">
-              Verified scholarships · Trusted platform
+              {t("auth.verifiedPlatform")}
             </p>
           </div>
 
@@ -50,13 +52,13 @@ export default function Login() {
           <form onSubmit={submit} className="mt-6 space-y-5">
             <div>
               <label htmlFor="login-email" className="mb-1.5 block text-sm font-medium text-slate-700">
-                Email
+                {t("auth.email")}
               </label>
               <input
                 id="login-email"
                 type="email"
                 autoComplete="email"
-                placeholder="you@example.com"
+                placeholder={t("auth.emailPlaceholder")}
                 value={form.email}
                 onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
                 className="input-base"
@@ -65,7 +67,7 @@ export default function Login() {
             </div>
             <div>
               <label htmlFor="login-password" className="mb-1.5 block text-sm font-medium text-slate-700">
-                Password
+                {t("auth.password")}
               </label>
               <div className="relative">
                 <input
@@ -83,7 +85,7 @@ export default function Login() {
                   onClick={() => setShowPass(!showPass)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-teal-600 hover:text-teal-700"
                 >
-                  {showPass ? "Hide" : "Show"}
+                  {showPass ? t("auth.hide") : t("auth.show")}
                 </button>
               </div>
             </div>
@@ -92,23 +94,23 @@ export default function Login() {
               disabled={loading}
               className="btn-primary w-full py-3"
             >
-              {loading ? "Signing in…" : "Log in"}
+              {loading ? t("auth.signingIn") : t("nav.login")}
             </button>
           </form>
 
           <p className="mt-6 text-center text-sm text-slate-500">
-            New student?{" "}
+            {t("auth.newStudent")}{" "}
             <button
               type="button"
               onClick={() => navigate("/signup")}
               className="font-semibold text-teal-600 hover:text-teal-700 hover:underline"
             >
-              Create account
+              {t("auth.createAccount")}
             </button>
           </p>
         </div>
         <p className="mt-6 text-center text-xs text-slate-400">
-          Used by students across India
+          {t("auth.usedBy")}
         </p>
       </div>
     </div>

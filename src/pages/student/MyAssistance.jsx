@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getMyAssistanceRequests } from "../../services/studentService";
+import { useTranslation } from "../../i18n";
 
 export default function MyAssistance() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -19,9 +21,9 @@ export default function MyAssistance() {
         onClick={() => navigate("/student")}
         className="mb-6 text-sm font-medium text-slate-600 hover:text-teal-600"
       >
-        ← Back to scholarships
+        ← {t("student.backToScholarships")}
       </button>
-      <h1 className="text-2xl font-bold text-slate-900">My assistance requests</h1>
+      <h1 className="text-2xl font-bold text-slate-900">{t("student.myAssistanceTitle")}</h1>
 
       {loading && (
         <div className="mt-8 flex justify-center py-12">
@@ -31,8 +33,8 @@ export default function MyAssistance() {
 
       {!loading && list.length === 0 && (
         <div className="empty-state mt-8">
-          <p className="font-medium">No assistance requests yet</p>
-          <p className="mt-1 text-sm">Request help from a scholarship detail page when you need it.</p>
+          <p className="font-medium">{t("student.noAssistance")}</p>
+          <p className="mt-1 text-sm">{t("student.noAssistanceHint")}</p>
         </div>
       )}
 
@@ -42,9 +44,9 @@ export default function MyAssistance() {
             <div key={ar._id} className="card">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <h2 className="font-semibold text-slate-900">{ar.scholarshipId?.title || "Scholarship"}</h2>
+                  <h2 className="font-semibold text-slate-900">{ar.scholarshipId?.title || t("student.scholarship")}</h2>
                   <p className="text-sm text-slate-500">
-                    Moderator: {ar.moderatorId?.name ?? "—"} · {ar.status}
+                    {t("student.moderator")}: {ar.moderatorId?.name ?? "—"} · {ar.status}
                   </p>
                 </div>
                 <span className={ar.status === "OPEN" ? "badge-warning" : "badge-success"}>
@@ -62,7 +64,7 @@ export default function MyAssistance() {
                 onClick={() => navigate(`/student/scholarships/${ar.scholarshipId?._id || ar.scholarshipId}`)}
                 className="mt-4 text-sm font-semibold text-teal-600 hover:underline"
               >
-                View scholarship →
+                {t("student.viewScholarship")}
               </button>
             </div>
           ))}

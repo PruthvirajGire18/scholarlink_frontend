@@ -1,9 +1,11 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { useTranslation } from "../i18n";
 
 export default function Home() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useTranslation();
 
   return (
     <section className="relative min-h-screen overflow-hidden">
@@ -15,15 +17,14 @@ export default function Home() {
         <div className="grid gap-12 lg:grid-cols-2 lg:gap-16 lg:items-center">
           <div>
             <p className="text-sm font-semibold uppercase tracking-wider text-teal-600">
-              Scholarship matching platform
+              {t("home.tagline")}
             </p>
             <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
-              Find the right scholarships{" "}
-              <span className="text-teal-600">made for you</span>
+              {t("home.title")}{" "}
+              <span className="text-teal-600">{t("home.titleHighlight")}</span>
             </h1>
             <p className="mt-6 max-w-xl text-lg text-slate-600 leading-relaxed">
-              A trusted platform that matches students with government, NGO and private
-              scholarships based on eligibility, income, marks and category.
+              {t("home.subtitle")}
             </p>
 
             {!user && (
@@ -32,13 +33,13 @@ export default function Home() {
                   onClick={() => navigate("/signup")}
                   className="btn-primary px-6 py-3 text-base"
                 >
-                  Get started
+                  {t("home.getStarted")}
                 </button>
                 <button
                   onClick={() => navigate("/login")}
                   className="btn-secondary px-6 py-3 text-base"
                 >
-                  Log in
+                  {t("nav.login")}
                 </button>
               </div>
             )}
@@ -46,15 +47,15 @@ export default function Home() {
 
           <div className="card relative border-0 bg-white/80 p-8 shadow-lg backdrop-blur sm:p-10">
             <h3 className="text-xl font-bold text-slate-900">
-              Why ScholarLink?
+              {t("home.whyTitle")}
             </h3>
             <ul className="mt-6 space-y-4 text-slate-600">
               {[
-                "Smart eligibility matching so you only see relevant scholarships",
-                "Government, NGO and private schemes in one place",
-                "Deadline alerts and application guidance",
-                "One profile — apply to multiple scholarships",
-                "Special focus on needy and underrepresented students",
+                t("home.why1"),
+                t("home.why2"),
+                t("home.why3"),
+                t("home.why4"),
+                t("home.why5"),
               ].map((item, i) => (
                 <li key={i} className="flex gap-3">
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-teal-100 text-teal-600 text-sm font-bold">

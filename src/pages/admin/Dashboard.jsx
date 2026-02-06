@@ -15,42 +15,47 @@ import DocumentReview from "./DocumentReview";
 import AuditLogs from "./AuditLogs";
 import FraudPanel from "./FraudPanel";
 
-export default function AdminDashboard() {
-  const [view, setView] = useState("MODERATORS");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [overview, setOverview] = useState({ pendingScholarships: 0, pendingDocuments: 0, fraudAlerts: 0 });
+// URL se view derive karo - taaki "View list" / Moderators pe click karte hi sahi content dikhe
+function getViewFromPathname(pathname) {
+  const path = pathname || "";
+  if (path === "/admin/scholarships" || path.startsWith("/admin/scholarships/")) return "PENDING";
+  if (path === "/admin/moderators" || path.startsWith("/admin/moderators")) return "MODERATORS";
+  if (path === "/admin/verification" || path.startsWith("/admin/verification")) return "VERIFICATION";
+  if (path === "/admin/documents" || path.startsWith("/admin/documents")) return "DOCUMENTS";
+  if (path === "/admin/audit-logs" || path.startsWith("/admin/audit-logs")) return "AUDIT";
+  if (path === "/admin/fraud" || path.startsWith("/admin/fraud")) return "FRAUD";
+  if (path === "/admin/all-scholarships" || path.startsWith("/admin/all-scholarships")) return "ALL";
+  if (path === "/admin" || path === "/admin/") return "OVERVIEW";
+  return "OVERVIEW";
+}
 
+export default function AdminDashboard() {
   const location = useLocation();
   const navigate = useNavigate();
+  const view = getViewFromPathname(location.pathname);
 
-  useEffect(() => {
-    if (location.pathname === "/admin/scholarships") setView("PENDING");
-    else if (location.pathname === "/admin/moderators") setView("MODERATORS");
-    else if (location.pathname === "/admin/verification") setView("VERIFICATION");
-    else if (location.pathname === "/admin/documents") setView("DOCUMENTS");
-    else if (location.pathname === "/admin/audit-logs") setView("AUDIT");
-    else if (location.pathname === "/admin/fraud") setView("FRAUD");
-    else if (location.pathname === "/admin" || location.pathname === "/admin/") setView("OVERVIEW");
-    else setView("OVERVIEW");
-  }, [location.pathname]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [overview, setOverview] = useState({ pendingScholarships: 0, pendingDocuments: 0, fraudAlerts: 0, moderatorsCount: 0 });
 
   useEffect(() => {
     if (view !== "OVERVIEW") return;
     (async () => {
       try {
-        const [sch, docs, fraud] = await Promise.all([
+        const [sch, docs, fraud, mods] = await Promise.all([
           getPendingScholarships(),
           getPendingDocuments(),
-          getFraudAlerts(false)
+          getFraudAlerts(false),
+          getAllModerators()
         ]);
         setOverview({
           pendingScholarships: sch.length,
           pendingDocuments: docs.length,
-          fraudAlerts: fraud.length
+          fraudAlerts: fraud.length,
+          moderatorsCount: mods.length
         });
       } catch {
-        setOverview({ pendingScholarships: 0, pendingDocuments: 0, fraudAlerts: 0 });
+        setOverview({ pendingScholarships: 0, pendingDocuments: 0, fraudAlerts: 0, moderatorsCount: 0 });
       }
     })();
   }, [view]);
@@ -77,10 +82,12 @@ export default function AdminDashboard() {
   const fetchModerators = async () => {
     try {
       setLoading(true);
+      setError("");
       const data = await getAllModerators();
-      setModerators(data);
+      setModerators(Array.isArray(data) ? data : []);
     } catch {
       setError("Failed to load moderators");
+      setModerators([]);
     } finally {
       setLoading(false);
     }
@@ -167,7 +174,7 @@ export default function AdminDashboard() {
         <button onClick={() => navigate("/admin/scholarships")} className={`rounded-lg px-4 py-2 text-sm font-medium transition ${navClass("PENDING")}`}>
           Pending Scholarships
         </button>
-        <button onClick={() => setView("ALL")} className={`rounded-lg px-4 py-2 text-sm font-medium transition ${navClass("ALL")}`}>
+        <button onClick={() => navigate("/admin/all-scholarships")} className={`rounded-lg px-4 py-2 text-sm font-medium transition ${navClass("ALL")}`}>
           All Scholarships
         </button>
         <button onClick={() => navigate("/admin/verification")} className={`rounded-lg px-4 py-2 text-sm font-medium transition ${navClass("VERIFICATION")}`}>
@@ -196,29 +203,81 @@ export default function AdminDashboard() {
       )}
 
       {view === "OVERVIEW" && (
-        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="card">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500">Pending Scholarships</h3>
-            <p className="mt-2 text-3xl font-bold text-teal-600">{overview.pendingScholarships}</p>
-            <button onClick={() => navigate("/admin/scholarships")} className="btn-secondary mt-4 text-sm">
-              View
-            </button>
+        <>
+          {/* Create Moderator form - sabse upar Overview pe */}
+          <div className="card mt-8">
+            <h2 className="text-lg font-bold text-slate-900">Create moderator</h2>
+            <p className="mt-1 text-sm text-slate-500">Add a new moderator. They can create and manage scholarships.</p>
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700">Name</label>
+                <input
+                  placeholder="Full name"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  className="input-base w-full"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700">Email</label>
+                <input
+                  type="email"
+                  placeholder="email@example.com"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  className="input-base w-full"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700">Password</label>
+                <input
+                  type="password"
+                  placeholder="Min 8 characters"
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  className="input-base w-full"
+                />
+              </div>
+              <div className="flex items-end">
+                <button onClick={handleCreateModerator} className="btn-primary w-full sm:w-auto">
+                  Create moderator
+                </button>
+              </div>
+            </div>
           </div>
-          <div className="card">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500">Pending Documents</h3>
-            <p className="mt-2 text-3xl font-bold text-amber-600">{overview.pendingDocuments}</p>
-            <button onClick={() => navigate("/admin/documents")} className="btn-secondary mt-4 text-sm">
-              View
-            </button>
+
+          <h3 className="mt-10 text-base font-semibold text-slate-800">Quick stats</h3>
+          <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="card">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500">Pending Scholarships</h3>
+              <p className="mt-2 text-3xl font-bold text-teal-600">{overview.pendingScholarships}</p>
+              <button onClick={() => navigate("/admin/scholarships")} className="btn-secondary mt-4 text-sm">
+                View
+              </button>
+            </div>
+            <div className="card">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500">Pending Documents</h3>
+              <p className="mt-2 text-3xl font-bold text-amber-600">{overview.pendingDocuments}</p>
+              <button onClick={() => navigate("/admin/documents")} className="btn-secondary mt-4 text-sm">
+                View
+              </button>
+            </div>
+            <div className="card">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500">Fraud alerts (open)</h3>
+              <p className="mt-2 text-3xl font-bold text-red-600">{overview.fraudAlerts}</p>
+              <button onClick={() => navigate("/admin/fraud")} className="btn-secondary mt-4 text-sm">
+                View
+              </button>
+            </div>
+            <div className="card">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500">Moderators</h3>
+              <p className="mt-2 text-3xl font-bold text-slate-700">{overview.moderatorsCount}</p>
+              <button onClick={() => navigate("/admin/moderators")} className="btn-secondary mt-4 text-sm">
+                View list
+              </button>
+            </div>
           </div>
-          <div className="card">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500">Fraud alerts (open)</h3>
-            <p className="mt-2 text-3xl font-bold text-red-600">{overview.fraudAlerts}</p>
-            <button onClick={() => navigate("/admin/fraud")} className="btn-secondary mt-4 text-sm">
-              View
-            </button>
-          </div>
-        </div>
+        </>
       )}
 
       {view === "VERIFICATION" && <VerificationQueue />}
@@ -227,33 +286,69 @@ export default function AdminDashboard() {
       {view === "FRAUD" && <FraudPanel />}
 
       {view === "MODERATORS" && (
-        <>
-          <div className="card mt-8">
-            <h2 className="text-lg font-semibold text-slate-900">Create moderator</h2>
-            <div className="mt-4 flex flex-wrap gap-3">
-              <input placeholder="Name" value={form.name}
-                onChange={(e)=>setForm({...form,name:e.target.value})}
-                className="input-base max-w-xs"/>
-              <input placeholder="Email" value={form.email}
-                onChange={(e)=>setForm({...form,email:e.target.value})}
-                className="input-base max-w-xs"/>
-              <input type="password" placeholder="Password" value={form.password}
-                onChange={(e)=>setForm({...form,password:e.target.value})}
-                className="input-base max-w-xs"/>
-              <button onClick={handleCreateModerator} className="btn-primary">
-                Create
-              </button>
+        <div className="mt-8">
+          <h2 className="text-xl font-bold text-slate-900 mb-6">Moderators</h2>
+
+          <div className="card">
+            <h3 className="text-lg font-semibold text-slate-900">Create moderator</h3>
+            <p className="mt-1 text-sm text-slate-500">Add a new moderator. They will get access to create and manage scholarships.</p>
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700">Name</label>
+                <input
+                  placeholder="Full name"
+                  value={form.name}
+                  onChange={(e)=>setForm({...form,name:e.target.value})}
+                  className="input-base w-full"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700">Email</label>
+                <input
+                  type="email"
+                  placeholder="email@example.com"
+                  value={form.email}
+                  onChange={(e)=>setForm({...form,email:e.target.value})}
+                  className="input-base w-full"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700">Password</label>
+                <input
+                  type="password"
+                  placeholder="Min 8 characters"
+                  value={form.password}
+                  onChange={(e)=>setForm({...form,password:e.target.value})}
+                  className="input-base w-full"
+                />
+              </div>
+              <div className="flex items-end">
+                <button onClick={handleCreateModerator} className="btn-primary w-full sm:w-auto">
+                  Create moderator
+                </button>
+              </div>
             </div>
           </div>
-          <div className="card mt-6">
-            <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Moderators</h3>
-            <ul className="mt-4 divide-y divide-slate-200">
-              {moderators.map(m=>(
-                <li key={m._id} className="py-3 first:pt-0">{m.name} <span className="text-slate-400">·</span> {m.email}</li>
-              ))}
-            </ul>
+
+          <div className="card mt-6 min-h-[200px]">
+            <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Moderator list ({(moderators || []).length})</h3>
+            {loading ? (
+              <div className="flex justify-center py-12">
+                <div className="loading-dots"><span /><span /><span /></div>
+              </div>
+            ) : (
+              <ul className="mt-4 divide-y divide-slate-200">
+                {(moderators || []).length === 0 ? (
+                  <li className="py-8 text-center text-slate-500">No moderators yet. Create one using the form above.</li>
+                ) : (
+                  (moderators || []).map(m=>(
+                    <li key={m._id || m.email} className="py-3 first:pt-0">{m.name} <span className="text-slate-400">·</span> {m.email}</li>
+                  ))
+                )}
+              </ul>
+            )}
           </div>
-        </>
+        </div>
       )}
 
       {view === "PENDING" && (

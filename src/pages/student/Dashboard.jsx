@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { Routes, Route, useNavigate } from "react-router-dom";
 import { getApprovedScholarships } from "../../services/studentService";
+import { useTranslation } from "../../i18n";
+import { useAccessibility } from "../../contexts/AccessibilityContext";
+import { speakHint } from "../../utils/voiceHints";
 import ScholarshipDetail from "./ScholarshipDetail";
 import MyAssistance from "./MyAssistance";
 
@@ -8,6 +11,8 @@ function ScholarshipList() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { t, lang } = useTranslation();
+  const { voiceHintsEnabled } = useAccessibility();
 
   useEffect(() => {
     getApprovedScholarships()
@@ -15,15 +20,22 @@ function ScholarshipList() {
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    if (voiceHintsEnabled && !loading && data.length > 0) {
+      speakHint(t("voiceHints.viewingApproved"), lang);
+    }
+  }, [voiceHintsEnabled, loading, data.length, lang, t]);
+
   return (
     <div className="page-container">
       <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold text-slate-900">Available scholarships</h1>
+        <h1 className="text-2xl font-bold text-slate-900">{t("student.availableScholarships")}</h1>
         <button
           onClick={() => navigate("/student/assistance")}
           className="btn-secondary shrink-0"
+          aria-label={t("voiceHints.clickForDetails")}
         >
-          My assistance requests
+          {t("student.myAssistanceRequests")}
         </button>
       </div>
 
@@ -37,8 +49,8 @@ function ScholarshipList() {
 
       {!loading && data.length === 0 && (
         <div className="empty-state mt-8">
-          <p className="font-medium">No scholarships available right now</p>
-          <p className="mt-1 text-sm">Check back later for new opportunities.</p>
+          <p className="font-medium">{t("student.noScholarships")}</p>
+          <p className="mt-1 text-sm">{t("student.checkBack")}</p>
         </div>
       )}
 
@@ -49,6 +61,7 @@ function ScholarshipList() {
               key={s._id}
               onClick={() => navigate(`/student/scholarships/${s._id}`)}
               className="card-hover group"
+              aria-label={t("voiceHints.clickForDetails")}
             >
               <div className="flex flex-col gap-3">
                 <h2 className="font-semibold text-slate-900 group-hover:text-teal-700">
@@ -58,11 +71,11 @@ function ScholarshipList() {
                   ₹{s.amount?.toLocaleString?.() ?? s.amount}
                 </p>
                 <p className="text-sm text-slate-500">
-                  Deadline: {new Date(s.deadline).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                  {t("student.deadline")}: {new Date(s.deadline).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                 </p>
               </div>
               <p className="mt-3 text-sm font-medium text-teal-600 group-hover:underline">
-                View details →
+                {t("student.viewDetails")} →
               </p>
             </article>
           ))}

@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "../i18n";
 
 export default function Signup() {
+  const { t } = useTranslation();
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -18,7 +20,7 @@ export default function Signup() {
       await signup(form);
       navigate("/login");
     } catch (err) {
-      setError(err?.message || "Registration failed. Please try again.");
+      setError(err?.message || t("auth.registrationFailed"));
     } finally {
       setLoading(false);
     }
@@ -29,9 +31,9 @@ export default function Signup() {
       <div className="w-full max-w-md">
         <div className="card border-0 shadow-xl">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-teal-600">Create account</h1>
+            <h1 className="text-2xl font-bold text-teal-600">{t("auth.createAccountTitle")}</h1>
             <p className="mt-1 text-sm text-slate-500">
-              Discover scholarships tailored for you
+              {t("auth.createAccountSubtitle")}
             </p>
           </div>
 
@@ -47,13 +49,13 @@ export default function Signup() {
           <form onSubmit={submit} className="mt-6 space-y-5">
             <div>
               <label htmlFor="signup-name" className="mb-1.5 block text-sm font-medium text-slate-700">
-                Full name
+                {t("auth.fullName")}
               </label>
               <input
                 id="signup-name"
                 type="text"
                 autoComplete="name"
-                placeholder="Your name"
+                placeholder={t("auth.namePlaceholder")}
                 value={form.name}
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                 className="input-base"
@@ -62,13 +64,13 @@ export default function Signup() {
             </div>
             <div>
               <label htmlFor="signup-email" className="mb-1.5 block text-sm font-medium text-slate-700">
-                Email
+                {t("auth.email")}
               </label>
               <input
                 id="signup-email"
                 type="email"
                 autoComplete="email"
-                placeholder="you@example.com"
+                placeholder={t("auth.emailPlaceholder")}
                 value={form.email}
                 onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
                 className="input-base"
@@ -77,13 +79,13 @@ export default function Signup() {
             </div>
             <div>
               <label htmlFor="signup-password" className="mb-1.5 block text-sm font-medium text-slate-700">
-                Password
+                {t("auth.password")}
               </label>
               <input
                 id="signup-password"
                 type="password"
                 autoComplete="new-password"
-                placeholder="At least 8 characters"
+                placeholder={t("auth.passwordPlaceholder")}
                 value={form.password}
                 onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
                 className="input-base"
@@ -96,23 +98,23 @@ export default function Signup() {
               disabled={loading}
               className="btn-primary w-full py-3"
             >
-              {loading ? "Creating account…" : "Create account"}
+              {loading ? t("auth.creatingAccount") : t("auth.createAccount")}
             </button>
           </form>
 
           <p className="mt-6 text-center text-sm text-slate-500">
-            Already have an account?{" "}
+            {t("auth.alreadyHave")}{" "}
             <button
               type="button"
               onClick={() => navigate("/login")}
               className="font-semibold text-teal-600 hover:text-teal-700 hover:underline"
             >
-              Log in
+              {t("nav.login")}
             </button>
           </p>
         </div>
         <p className="mt-6 text-center text-xs text-slate-400">
-          100% free · No agents · Secure data
+          {t("auth.freeSecure")}
         </p>
       </div>
     </div>

@@ -26,7 +26,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    const lang = localStorage.getItem("app_lang");
+    const voiceHints = localStorage.getItem("app_voice_hints");
     localStorage.clear();
+    if (lang) localStorage.setItem("app_lang", lang);
+    if (voiceHints) localStorage.setItem("app_voice_hints", voiceHints);
     setUser(null);
   };
 
