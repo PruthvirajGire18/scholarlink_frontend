@@ -1,56 +1,48 @@
-import axios from "axios";
-
-const API = axios.create({
-  baseURL: "http://localhost:5000/api",
-});
-
-// 🔐 Token attach automatically
-API.interceptors.request.use((req) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    req.headers.Authorization = `Bearer ${token}`;
-  }
-  return req;
-});
+import apiClient from "./apiClient";
 
 export const createScholarship = async (data) => {
-  const res = await API.post("/moderator/scholarships", data);
-  return res.data;
+  const response = await apiClient.post("/moderator/scholarships", data);
+  return response.data;
 };
 
 export const getMyScholarships = async () => {
-  const res = await API.get("/moderator/scholarships");
-  return res.data;
+  const response = await apiClient.get("/moderator/scholarships");
+  return response.data;
 };
 
 export const updateScholarship = async (id, data) => {
-  const res = await API.put(`/moderator/scholarships/${id}`, data);
-  return res.data;
+  const response = await apiClient.put(`/moderator/scholarships/${id}`, data);
+  return response.data;
 };
 
 export const deleteScholarship = async (id) => {
-  const res = await API.delete(`/moderator/scholarships/${id}`);
-  return res.data;
+  const response = await apiClient.delete(`/moderator/scholarships/${id}`);
+  return response.data;
 };
 
 export const getAssistanceRequests = async (status) => {
-  const res = await API.get("/moderator/assistance", {
+  const response = await apiClient.get("/moderator/assistance", {
     params: status ? { status } : {}
   });
-  return res.data;
+  return response.data;
+};
+
+export const getAssistanceRequestDetail = async (id) => {
+  const response = await apiClient.get(`/moderator/assistance/${id}`);
+  return response.data;
 };
 
 export const replyToAssistance = async (id, message) => {
-  const res = await API.put(`/moderator/assistance/${id}/reply`, { message });
-  return res.data;
+  const response = await apiClient.put(`/moderator/assistance/${id}/reply`, { message });
+  return response.data;
 };
 
 export const resolveAssistance = async (id) => {
-  const res = await API.put(`/moderator/assistance/${id}/resolve`);
-  return res.data;
+  const response = await apiClient.put(`/moderator/assistance/${id}/resolve`);
+  return response.data;
 };
 
 export const getScholarshipApplications = async (scholarshipId) => {
-  const res = await API.get(`/moderator/scholarships/${scholarshipId}/applications`);
-  return res.data;
+  const response = await apiClient.get(`/moderator/scholarships/${scholarshipId}/applications`);
+  return response.data;
 };

@@ -66,6 +66,12 @@ export default function MyAssistance() {
               >
                 {t("student.viewScholarship")}
               </button>
+              <button
+                onClick={() => navigate(`/student/assistance/${ar._id}`)}
+                className="mt-2 block text-sm font-semibold text-teal-600 hover:underline"
+              >
+                Open chat thread
+              </button>
             </div>
           ))}
         </div>

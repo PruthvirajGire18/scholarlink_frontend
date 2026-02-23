@@ -2,275 +2,131 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   createScholarship,
-  getMyScholarships,
-  updateScholarship,
   deleteScholarship,
+  getAssistanceRequestDetail,
   getAssistanceRequests,
+  getMyScholarships,
+  getScholarshipApplications,
   replyToAssistance,
   resolveAssistance,
-  getScholarshipApplications
+  updateScholarship
 } from "../../services/moderatorService";
 
+const emptyForm = {
+  title: "",
+  description: "",
+  providerType: "GOVERNMENT",
+  providerName: "",
+  providerWebsite: "",
+  amount: "",
+  minMarks: "",
+  maxIncome: "",
+  statesAllowed: "",
+  documentsRequired: "",
+  commonMistakes: "",
+  applicationMode: "ONLINE",
+  applyLink: "",
+  applicationSteps: "",
+  deadline: ""
+};
+
+const parseList = (value) =>
+  String(value || "")
+    .split(/\n|,|;|\|/g)
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+const getView = (path) => {
+  if (path.startsWith("/moderator/my-scholarships")) return "MY";
+  if (path.startsWith("/moderator/assistance")) return "ASSISTANCE";
+  if (path.startsWith("/moderator/applications")) return "APPLICATIONS";
+  return "CREATE";
+};
+
+const statusBadge = (status) =>
+  status === "APPROVED" ? "badge-success" : status === "REJECTED" ? "badge-danger" : "badge-warning";
+
+const buildPayload = (form) => ({
+  title: form.title.trim(),
+  description: form.description.trim(),
+  provider: {
+    type: form.providerType,
+    name: form.providerName || undefined,
+    website: form.providerWebsite || undefined
+  },
+  amount: Number(form.amount || 0),
+  eligibility: {
+    minMarks: form.minMarks === "" ? undefined : Number(form.minMarks),
+    maxIncome: form.maxIncome === "" ? undefined : Number(form.maxIncome),
+    statesAllowed: parseList(form.statesAllowed)
+  },
+  documentsRequired: parseList(form.documentsRequired),
+  commonMistakes: parseList(form.commonMistakes),
+  applicationProcess: {
+    mode: form.applicationMode,
+    applyLink: form.applyLink.trim(),
+    steps: parseList(form.applicationSteps)
+  },
+  deadline: form.deadline
+});
+
 export default function ModeratorDashboard() {
-  const [view, setView] = useState("CREATE");
-  const [loading, setLoading] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const view = getView(location.pathname);
 
-  useEffect(() => {
-    if (location.pathname === "/moderator/my-scholarships") setView("MY_SCHOLARSHIPS");
-    else if (location.pathname === "/moderator/assistance") setView("ASSISTANCE");
-    else if (location.pathname === "/moderator/applications") setView("APPLICATIONS");
-    else setView("CREATE");
-  }, [location.pathname]);
-
-  const [assistanceList, setAssistanceList] = useState([]);
-  const [assistanceFilter, setAssistanceFilter] = useState("");
-  const [replyText, setReplyText] = useState("");
-  const [replyingId, setReplyingId] = useState(null);
-  const [applicationsScholarshipId, setApplicationsScholarshipId] = useState(null);
-  const [applicationsList, setApplicationsList] = useState([]);
-  const [editingId, setEditingId] = useState(null);
-
-  /* =========================
-     FORM STATE (SCHEMA COMPLETE)
-  ========================= */
-  const [form, setForm] = useState({
-    // BASIC
-    title: "",
-    description: "",
-
-    // PROVIDER
-    providerType: "GOVERNMENT",
-    providerName: "",
-    providerWebsite: "",
-
-    // FINANCIAL
-    amount: "",
-    benefits: "",
-
-    // ELIGIBILITY
-    minMarks: "",
-    maxIncome: "",
-    gender: "ANY",
-    educationLevel: "DIPLOMA",
-    statesAllowed: "",
-
-    // DOCUMENTS
-    documentsRequired: "",
-
-    // APPLICATION
-    applicationMode: "ONLINE",
-    applyLink: "",
-    applicationSteps: "",
-
-    // DEADLINE
-    deadline: ""
-  });
-
-  /* =========================
-     DATA STATE
-  ========================= */
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [form, setForm] = useState(emptyForm);
+  const [editingId, setEditingId] = useState("");
   const [myScholarships, setMyScholarships] = useState([]);
+  const [assistanceFilter, setAssistanceFilter] = useState("");
+  const [assistance, setAssistance] = useState([]);
+  const [selectedAssistanceId, setSelectedAssistanceId] = useState("");
+  const [assistanceDetail, setAssistanceDetail] = useState(null);
+  const [replyText, setReplyText] = useState("");
+  const [applicationsScholarshipId, setApplicationsScholarshipId] = useState("");
+  const [applications, setApplications] = useState([]);
 
-  /* =========================
-     CREATE SCHOLARSHIP
-  ========================= */
-  const handleCreate = async () => {
-    if (!form.title || !form.amount || !form.deadline) {
-      return alert("Title, Amount and Deadline are required");
-    }
-
-    try {
-      setLoading(true);
-
-      const payload = {
-        title: form.title,
-        description: form.description,
-
-        provider: {
-          type: form.providerType,
-          name: form.providerName || undefined,
-          website: form.providerWebsite || undefined
-        },
-
-        amount: Number(form.amount),
-        benefits: form.benefits || undefined,
-
-        eligibility: {
-          minMarks: form.minMarks || undefined,
-          maxIncome: form.maxIncome || undefined,
-          gender: form.gender,
-          educationLevel: form.educationLevel,
-          statesAllowed: form.statesAllowed
-            ? form.statesAllowed.split(",").map(s => s.trim())
-            : []
-        },
-
-        documentsRequired: form.documentsRequired
-          ? form.documentsRequired.split(",").map(d => d.trim())
-          : [],
-
-        applicationProcess: {
-          mode: form.applicationMode,
-          applyLink: form.applyLink || undefined,
-          steps: form.applicationSteps
-            ? form.applicationSteps.split("\n")
-            : []
-        },
-
-        deadline: form.deadline
-      };
-
-      await createScholarship(payload);
-
-      alert("Scholarship submitted for admin review");
-      setView("MY_SCHOLARSHIPS");
-    } catch (err) {
-      alert(err.response?.data?.msg || "Failed to create scholarship");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  /* =========================
-     FETCH MY SCHOLARSHIPS
-  ========================= */
-  const fetchMyScholarships = async () => {
-    try {
-      setLoading(true);
-      const data = await getMyScholarships();
-      setMyScholarships(data);
-    } catch {
-      alert("Failed to fetch scholarships");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchAssistance = async () => {
-    try {
-      setLoading(true);
-      const data = await getAssistanceRequests(assistanceFilter || undefined);
-      setAssistanceList(data);
-    } catch {
-      alert("Failed to load assistance requests");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchApplications = async (sid) => {
-    if (!sid) return;
-    try {
-      setLoading(true);
-      const data = await getScholarshipApplications(sid);
-      setApplicationsList(data);
-    } catch {
-      alert("Failed to load applications");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const loadMyScholarships = async () => setMyScholarships(await getMyScholarships());
+  const loadAssistance = async () => setAssistance(await getAssistanceRequests(assistanceFilter || undefined));
+  const loadApplications = async (id) => setApplications(id ? await getScholarshipApplications(id) : []);
 
   useEffect(() => {
-    if (view === "MY_SCHOLARSHIPS") fetchMyScholarships();
-    if (view === "ASSISTANCE") fetchAssistance();
+    (async () => {
+      try {
+        setLoading(true);
+        if (view === "MY" || view === "APPLICATIONS") await loadMyScholarships();
+        if (view === "ASSISTANCE") await loadAssistance();
+      } catch (e) {
+        setError(e?.response?.data?.msg || e?.response?.data?.message || "Failed to load moderator dashboard");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [view, assistanceFilter]);
+
+  useEffect(() => {
     if (view === "APPLICATIONS") {
-      if (applicationsScholarshipId) fetchApplications(applicationsScholarshipId);
-      else if (myScholarships.length === 0) fetchMyScholarships();
+      loadApplications(applicationsScholarshipId).catch(() => setApplications([]));
     }
-  }, [view, assistanceFilter, applicationsScholarshipId]);
+  }, [applicationsScholarshipId, view]);
 
-  const handleUpdateScholarship = async () => {
-    if (!editingId || !form.title || !form.amount || !form.deadline) {
-      alert("Title, Amount and Deadline are required");
-      return;
-    }
-    try {
-      setLoading(true);
-      const payload = {
-        title: form.title,
-        description: form.description,
-        provider: {
-          type: form.providerType,
-          name: form.providerName || undefined,
-          website: form.providerWebsite || undefined
-        },
-        amount: Number(form.amount),
-        benefits: form.benefits || undefined,
-        eligibility: {
-          minMarks: form.minMarks || undefined,
-          maxIncome: form.maxIncome || undefined,
-          gender: form.gender,
-          educationLevel: form.educationLevel,
-          statesAllowed: form.statesAllowed ? form.statesAllowed.split(",").map((s) => s.trim()) : []
-        },
-        documentsRequired: form.documentsRequired ? form.documentsRequired.split(",").map((d) => d.trim()) : [],
-        applicationProcess: {
-          mode: form.applicationMode,
-          applyLink: form.applyLink || undefined,
-          steps: form.applicationSteps ? form.applicationSteps.split("\n") : []
-        },
-        deadline: form.deadline
-      };
-      await updateScholarship(editingId, payload);
-      alert("Scholarship updated; resubmitted for review");
-      setEditingId(null);
-      fetchMyScholarships();
-    } catch (err) {
-      alert(err.response?.data?.msg || "Failed to update");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleWithdraw = async (id) => {
-    if (!confirm("Withdraw this scholarship?")) return;
-    try {
-      await deleteScholarship(id);
-      fetchMyScholarships();
-    } catch (err) {
-      alert(err.response?.data?.msg || "Failed to withdraw");
-    }
-  };
-
-  const handleReply = async (id) => {
-    if (!replyText.trim()) return;
-    try {
-      await replyToAssistance(id, replyText.trim());
-      setReplyText("");
-      setReplyingId(null);
-      fetchAssistance();
-    } catch (err) {
-      alert(err.response?.data?.msg || "Failed to reply");
-    }
-  };
-
-  const handleResolve = async (id) => {
-    try {
-      await resolveAssistance(id);
-      fetchAssistance();
-    } catch (err) {
-      alert(err.response?.data?.msg || "Failed to resolve");
-    }
-  };
-
-  const fillFormFromScholarship = (s) => {
+  const fillForm = (s) => {
+    setEditingId(s._id);
     setForm({
       title: s.title || "",
       description: s.description || "",
       providerType: s.provider?.type || "GOVERNMENT",
       providerName: s.provider?.name || "",
       providerWebsite: s.provider?.website || "",
-      amount: s.amount ?? "",
-      benefits: s.benefits || "",
+      amount: s.amount || "",
       minMarks: s.eligibility?.minMarks ?? "",
       maxIncome: s.eligibility?.maxIncome ?? "",
-      gender: s.eligibility?.gender || "ANY",
-      educationLevel: s.eligibility?.educationLevel || "DIPLOMA",
       statesAllowed: Array.isArray(s.eligibility?.statesAllowed) ? s.eligibility.statesAllowed.join(", ") : "",
       documentsRequired: Array.isArray(s.documentsRequired) ? s.documentsRequired.join(", ") : "",
+      commonMistakes: Array.isArray(s.commonMistakes) ? s.commonMistakes.join("\n") : "",
       applicationMode: s.applicationProcess?.mode || "ONLINE",
       applyLink: s.applicationProcess?.applyLink || "",
       applicationSteps: Array.isArray(s.applicationProcess?.steps) ? s.applicationProcess.steps.join("\n") : "",
@@ -278,378 +134,240 @@ export default function ModeratorDashboard() {
     });
   };
 
-  useEffect(() => {
-    if (view === "MY_SCHOLARSHIPS") {
-      fetchMyScholarships();
-    }
-  }, [view]);
+  const resetForm = () => {
+    setEditingId("");
+    setForm(emptyForm);
+  };
 
-  const tabClass = (v) =>
-    view === v ? "bg-teal-600 text-white shadow-sm" : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50";
+  const handleCreateOrUpdate = async () => {
+    if (!form.title || !form.description || !form.amount || !form.deadline || !form.applyLink) {
+      setError("Title, description, amount, deadline and official apply link are required.");
+      return;
+    }
+    try {
+      setLoading(true);
+      const payload = buildPayload(form);
+      if (editingId) await updateScholarship(editingId, payload);
+      else await createScholarship(payload);
+      setNotice(editingId ? "Scholarship updated and re-submitted." : "Scholarship submitted for review.");
+      resetForm();
+      await loadMyScholarships();
+      if (!editingId) navigate("/moderator/my-scholarships");
+    } catch (e) {
+      setError(e?.response?.data?.msg || e?.response?.data?.message || "Action failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleWithdraw = async (id) => {
+    if (!window.confirm("Withdraw this scholarship?")) return;
+    try {
+      setLoading(true);
+      await deleteScholarship(id);
+      await loadMyScholarships();
+      setNotice("Scholarship withdrawn.");
+    } catch (e) {
+      setError(e?.response?.data?.msg || e?.response?.data?.message || "Withdraw failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openAssistance = async (id) => {
+    try {
+      setLoading(true);
+      setSelectedAssistanceId(id);
+      setAssistanceDetail(await getAssistanceRequestDetail(id));
+    } catch (e) {
+      setError(e?.response?.data?.msg || e?.response?.data?.message || "Failed to load request");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReply = async (id) => {
+    if (!replyText.trim()) return;
+    try {
+      setLoading(true);
+      await replyToAssistance(id, replyText.trim());
+      setReplyText("");
+      await loadAssistance();
+      if (selectedAssistanceId === id) await openAssistance(id);
+    } catch (e) {
+      setError(e?.response?.data?.msg || e?.response?.data?.message || "Reply failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResolve = async (id) => {
+    try {
+      setLoading(true);
+      await resolveAssistance(id);
+      await loadAssistance();
+      if (selectedAssistanceId === id) await openAssistance(id);
+    } catch (e) {
+      setError(e?.response?.data?.msg || e?.response?.data?.message || "Resolve failed");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="page-container">
-      <h1 className="text-2xl font-bold text-slate-900">Moderator Dashboard</h1>
+    <div className="page-container space-y-6">
+      {error && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+      {notice && <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{notice}</div>}
 
-      <div className="mt-6 flex flex-wrap gap-2">
-        <button onClick={() => navigate("/moderator")} className={`rounded-lg px-4 py-2 text-sm font-medium transition ${tabClass("CREATE")}`}>
-          Create scholarship
-        </button>
-        <button onClick={() => navigate("/moderator/my-scholarships")} className={`rounded-lg px-4 py-2 text-sm font-medium transition ${tabClass("MY_SCHOLARSHIPS")}`}>
-          My scholarships
-        </button>
-        <button onClick={() => navigate("/moderator/assistance")} className={`rounded-lg px-4 py-2 text-sm font-medium transition ${tabClass("ASSISTANCE")}`}>
-          Assistance
-        </button>
-        <button onClick={() => navigate("/moderator/applications")} className={`rounded-lg px-4 py-2 text-sm font-medium transition ${tabClass("APPLICATIONS")}`}>
-          Applications
-        </button>
-      </div>
-
-      {view === "CREATE" && (
-        <div className="card mt-8 max-w-2xl">
-          <h2 className="text-lg font-semibold text-slate-900">Create scholarship</h2>
-
-          <input type="text" placeholder="Scholarship title" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} className="input-base mt-4 mb-2" />
-          <textarea placeholder="Description" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className="input-base min-h-[100px] resize-y mb-4" />
-
-          {/* PROVIDER */}
-          <h3 className="font-semibold mb-2">Provider</h3>
-
-          <input
-            type="text"
-            placeholder="Provider Name"
-            value={form.providerName}
-            onChange={e =>
-              setForm({ ...form, providerName: e.target.value })
-            }
-            className="input-base mb-2"
-          />
-
-          <input
-            type="text"
-            placeholder="Provider Website"
-            value={form.providerWebsite}
-            onChange={e =>
-              setForm({ ...form, providerWebsite: e.target.value })
-            }
-            className="input-base mb-2"
-          />
-
-          <select
-            value={form.providerType}
-            onChange={e =>
-              setForm({ ...form, providerType: e.target.value })
-            }
-            className="input-base mb-4"
-          >
-            <option value="GOVERNMENT">Government</option>
-            <option value="NGO">NGO</option>
-            <option value="CSR">CSR</option>
-            <option value="PRIVATE">Private</option>
-          </select>
-
-          {/* FINANCIAL */}
-          <h3 className="font-semibold mb-2">Financial</h3>
-
-          <input
-            type="number"
-            placeholder="Amount"
-            value={form.amount}
-            onChange={e =>
-              setForm({ ...form, amount: e.target.value })
-            }
-            className="input-base mb-2"
-          />
-
-          <input
-            type="text"
-            placeholder="Benefits (tuition, stipend, etc)"
-            value={form.benefits}
-            onChange={e =>
-              setForm({ ...form, benefits: e.target.value })
-            }
-            className="input-base mb-4"
-          />
-
-          {/* ELIGIBILITY */}
-          <h3 className="font-semibold mb-2">Eligibility</h3>
-
-          <input
-            type="number"
-            placeholder="Minimum Marks (%)"
-            value={form.minMarks}
-            onChange={e =>
-              setForm({ ...form, minMarks: e.target.value })
-            }
-            className="input-base mb-2"
-          />
-
-          <input
-            type="number"
-            placeholder="Maximum Income"
-            value={form.maxIncome}
-            onChange={e =>
-              setForm({ ...form, maxIncome: e.target.value })
-            }
-            className="input-base mb-2"
-          />
-
-          <select
-            value={form.gender}
-            onChange={e =>
-              setForm({ ...form, gender: e.target.value })
-            }
-            className="input-base mb-2"
-          >
-            <option value="ANY">Any</option>
-            <option value="MALE">Male</option>
-            <option value="FEMALE">Female</option>
-          </select>
-
-          <select
-            value={form.educationLevel}
-            onChange={e =>
-              setForm({ ...form, educationLevel: e.target.value })
-            }
-            className="input-base mb-2"
-          >
-            <option value="DIPLOMA">Diploma</option>
-            <option value="UG">UG</option>
-            <option value="PG">PG</option>
-            <option value="PHD">PhD</option>
-          </select>
-
-          <input
-            type="text"
-            placeholder="States Allowed (comma separated)"
-            value={form.statesAllowed}
-            onChange={e =>
-              setForm({ ...form, statesAllowed: e.target.value })
-            }
-            className="input-base mb-4"
-          />
-
-          {/* DOCUMENTS */}
-          <h3 className="font-semibold mb-2">Documents Required</h3>
-
-          <input
-            type="text"
-            placeholder="Aadhaar, Income Certificate, Caste Certificate"
-            value={form.documentsRequired}
-            onChange={e =>
-              setForm({ ...form, documentsRequired: e.target.value })
-            }
-            className="input-base mb-4"
-          />
-
-          {/* APPLICATION */}
-          <h3 className="font-semibold mb-2">Application Process</h3>
-
-          <select
-            value={form.applicationMode}
-            onChange={e =>
-              setForm({ ...form, applicationMode: e.target.value })
-            }
-            className="input-base mb-2"
-          >
-            <option value="ONLINE">Online</option>
-            <option value="OFFLINE">Offline</option>
-            <option value="BOTH">Both</option>
-          </select>
-
-          <input
-            type="text"
-            placeholder="Apply Link"
-            value={form.applyLink}
-            onChange={e =>
-              setForm({ ...form, applyLink: e.target.value })
-            }
-            className="input-base mb-2"
-          />
-
-          <textarea
-            placeholder="Application steps (one per line)"
-            value={form.applicationSteps}
-            onChange={e =>
-              setForm({ ...form, applicationSteps: e.target.value })
-            }
-            className="input-base mb-4"
-          />
-
-          {/* DEADLINE */}
-          <input
-            type="date"
-            min={new Date().toISOString().split("T")[0]}
-            value={form.deadline}
-            onChange={e =>
-              setForm({ ...form, deadline: e.target.value })
-            }
-            className="input-base mb-4"
-          />
-
-          <button disabled={loading} onClick={handleCreate} className="btn-primary mt-4">
-            {loading ? "Submitting…" : "Submit for review"}
-          </button>
+      <section>
+        <h1 className="text-2xl font-bold text-slate-900">Moderator Dashboard</h1>
+        <p className="mt-1 text-sm text-slate-600">
+          Add verified scholarships and guide students. Final submission and verification happens on official portals only.
+        </p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button className="btn-secondary py-1.5" onClick={() => navigate("/moderator")}>Create</button>
+          <button className="btn-secondary py-1.5" onClick={() => navigate("/moderator/my-scholarships")}>My scholarships</button>
+          <button className="btn-secondary py-1.5" onClick={() => navigate("/moderator/assistance")}>Assistance</button>
+          <button className="btn-secondary py-1.5" onClick={() => navigate("/moderator/applications")}>Applications</button>
         </div>
-      )}
+      </section>
 
-      {view === "MY_SCHOLARSHIPS" && (
-        <div className="card mt-8">
-          <h2 className="text-lg font-semibold text-slate-900">My scholarships</h2>
-          {loading && <div className="mt-6 flex justify-center py-8"><div className="loading-dots"><span /><span /><span /></div></div>}
-          {!loading && myScholarships.length === 0 && <div className="empty-state mt-6">No scholarships created yet.</div>}
-          {!loading && myScholarships.length > 0 && (
-            <div className="mt-6 overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50/80">
-                    <th className="p-3 text-left text-sm font-semibold text-slate-700">Title</th>
-                    <th className="p-3 text-left text-sm font-semibold text-slate-700">Provider</th>
-                    <th className="p-3 text-left text-sm font-semibold text-slate-700">Amount</th>
-                    <th className="p-3 text-left text-sm font-semibold text-slate-700">Deadline</th>
-                    <th className="p-3 text-left text-sm font-semibold text-slate-700">Status</th>
-                    <th className="p-3 text-left text-sm font-semibold text-slate-700">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {myScholarships.map((s) => (
-                    <tr key={s._id} className="border-b border-slate-100 last:border-0">
-                      <td className="p-3 font-medium text-slate-900">{s.title}</td>
-                      <td className="p-3 text-slate-600">{s.provider?.type}</td>
-                      <td className="p-3">₹{s.amount?.toLocaleString?.() ?? s.amount}</td>
-                      <td className="p-3 text-slate-600">{new Date(s.deadline).toLocaleDateString()}</td>
-                      <td className="p-3">
-                        <span className={s.status === "PENDING" ? "badge-warning" : s.status === "APPROVED" ? "badge-success" : "badge-danger"}>{s.status}</span>
-                      </td>
-                      <td className="p-3">
-                        {s.status === "REJECTED" && (
-                          <button onClick={() => { setEditingId(s._id); fillFormFromScholarship(s); setView("EDIT"); }} className="btn-accent mr-1 py-1.5 text-sm">Edit & re-submit</button>
-                        )}
-                        {s.status === "PENDING" && (
-                          <>
-                            <button onClick={() => { setEditingId(s._id); fillFormFromScholarship(s); setView("EDIT"); }} className="btn-secondary mr-1 py-1.5 text-sm">Edit</button>
-                            <button onClick={() => handleWithdraw(s._id)} className="btn-danger py-1.5 text-sm">Withdraw</button>
-                          </>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-          {myScholarships.some((s) => s.status === "REJECTED") && (
-            <div className="mt-6 space-y-2 border-t border-slate-200 pt-6">
-              <h3 className="font-semibold text-slate-900">Rejection reasons</h3>
-              {myScholarships.filter((s) => s.status === "REJECTED" && s.reviewRemarks).map((s) => (
-                <div key={s._id} className="rounded-lg border border-red-200 bg-red-50/80 p-3 text-sm">
-                  <strong className="text-slate-900">{s.title}</strong>: <span className="text-red-800">{s.reviewRemarks}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {view === "EDIT" && editingId && (
-        <div className="card mt-8 max-w-2xl">
-          <h2 className="text-lg font-semibold text-slate-900">Edit scholarship (resubmit for review)</h2>
-          <input type="text" placeholder="Scholarship title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="input-base mt-4 mb-2" />
-          <textarea placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="input-base min-h-[80px] mb-4" />
-          <input type="number" placeholder="Amount" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} className="input-base mb-2" />
-          <input type="date" min={new Date().toISOString().split("T")[0]} value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} className="input-base mb-4" />
-          <div className="flex gap-3">
-            <button disabled={loading} onClick={handleUpdateScholarship} className="btn-primary">Update & re-submit</button>
-            <button onClick={() => { setEditingId(null); setView("MY_SCHOLARSHIPS"); }} className="btn-secondary">Cancel</button>
+      {(view === "CREATE" || editingId) && (
+        <section className="card space-y-3">
+          <h2 className="text-lg font-semibold">{editingId ? "Edit scholarship" : "Create scholarship"}</h2>
+          <div className="grid gap-3 md:grid-cols-2">
+            <input className="input-base md:col-span-2" placeholder="Title" value={form.title} onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))} />
+            <textarea className="input-base md:col-span-2 min-h-[110px] resize-y" placeholder="Description" value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} />
+            <select className="input-base" value={form.providerType} onChange={(e) => setForm((p) => ({ ...p, providerType: e.target.value }))}>
+              <option value="GOVERNMENT">Government</option><option value="NGO">NGO</option><option value="CSR">CSR</option><option value="PRIVATE">Private</option>
+            </select>
+            <input className="input-base" placeholder="Provider name" value={form.providerName} onChange={(e) => setForm((p) => ({ ...p, providerName: e.target.value }))} />
+            <input className="input-base" placeholder="Provider website" value={form.providerWebsite} onChange={(e) => setForm((p) => ({ ...p, providerWebsite: e.target.value }))} />
+            <input className="input-base" type="number" placeholder="Amount (INR)" value={form.amount} onChange={(e) => setForm((p) => ({ ...p, amount: e.target.value }))} />
+            <input className="input-base" type="number" placeholder="Min marks (%)" value={form.minMarks} onChange={(e) => setForm((p) => ({ ...p, minMarks: e.target.value }))} />
+            <input className="input-base" type="number" placeholder="Max income" value={form.maxIncome} onChange={(e) => setForm((p) => ({ ...p, maxIncome: e.target.value }))} />
+            <input className="input-base" placeholder="States allowed" value={form.statesAllowed} onChange={(e) => setForm((p) => ({ ...p, statesAllowed: e.target.value }))} />
+            <textarea className="input-base min-h-[90px] resize-y" placeholder="Documents required" value={form.documentsRequired} onChange={(e) => setForm((p) => ({ ...p, documentsRequired: e.target.value }))} />
+            <textarea className="input-base min-h-[90px] resize-y" placeholder="Common mistakes students make" value={form.commonMistakes} onChange={(e) => setForm((p) => ({ ...p, commonMistakes: e.target.value }))} />
+            <select className="input-base" value={form.applicationMode} onChange={(e) => setForm((p) => ({ ...p, applicationMode: e.target.value }))}>
+              <option value="ONLINE">Online</option><option value="OFFLINE">Offline</option><option value="BOTH">Both</option>
+            </select>
+            <input className="input-base" placeholder="Official apply link (required)" value={form.applyLink} onChange={(e) => setForm((p) => ({ ...p, applyLink: e.target.value }))} />
+            <textarea className="input-base md:col-span-2 min-h-[90px] resize-y" placeholder="Application steps" value={form.applicationSteps} onChange={(e) => setForm((p) => ({ ...p, applicationSteps: e.target.value }))} />
+            <input className="input-base" type="date" min={new Date().toISOString().split("T")[0]} value={form.deadline} onChange={(e) => setForm((p) => ({ ...p, deadline: e.target.value }))} />
           </div>
-        </div>
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800">
+            Guidance only: students must submit and verify on official portals.
+          </div>
+          <div className="flex gap-2">
+            <button className="btn-primary" disabled={loading} onClick={handleCreateOrUpdate}>{editingId ? "Update and re-submit" : "Submit for review"}</button>
+            {editingId && <button className="btn-secondary" onClick={resetForm}>Cancel edit</button>}
+          </div>
+        </section>
+      )}
+
+      {view === "MY" && !editingId && (
+        <section className="card">
+          <h2 className="text-lg font-semibold">My scholarships</h2>
+          {loading && <p className="mt-3 text-sm text-slate-500">Loading...</p>}
+          {!loading && myScholarships.length === 0 && <div className="empty-state mt-4">No scholarships yet.</div>}
+          <div className="mt-4 space-y-3">
+            {myScholarships.map((s) => (
+              <article key={s._id} className="rounded-lg border border-slate-200 p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <p className="font-semibold text-slate-900">{s.title}</p>
+                    <p className="text-sm text-slate-600">INR {Number(s.amount || 0).toLocaleString("en-IN")} | Deadline {new Date(s.deadline).toLocaleDateString("en-IN")}</p>
+                  </div>
+                  <span className={`badge ${statusBadge(s.status)}`}>{s.status}</span>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {["PENDING", "REJECTED"].includes(s.status) && <button className="btn-secondary py-1.5 text-sm" onClick={() => fillForm(s)}>Edit</button>}
+                  {s.status === "PENDING" && <button className="btn-danger py-1.5 text-sm" disabled={loading} onClick={() => handleWithdraw(s._id)}>Withdraw</button>}
+                </div>
+                {s.reviewRemarks && s.status === "REJECTED" && <p className="mt-2 text-sm text-red-700">Admin feedback: {s.reviewRemarks}</p>}
+              </article>
+            ))}
+          </div>
+        </section>
       )}
 
       {view === "ASSISTANCE" && (
-        <div className="card mt-8">
-          <h2 className="text-lg font-semibold text-slate-900">Assistance inbox</h2>
-          <div className="mt-4 flex gap-2">
-            <button onClick={() => setAssistanceFilter("")} className={`rounded-lg px-3 py-1.5 text-sm font-medium ${!assistanceFilter ? "bg-teal-600 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}>All</button>
-            <button onClick={() => setAssistanceFilter("OPEN")} className={`rounded-lg px-3 py-1.5 text-sm font-medium ${assistanceFilter === "OPEN" ? "bg-teal-600 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}>Open</button>
-            <button onClick={() => setAssistanceFilter("RESOLVED")} className={`rounded-lg px-3 py-1.5 text-sm font-medium ${assistanceFilter === "RESOLVED" ? "bg-teal-600 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}>Resolved</button>
-          </div>
-          {loading && <div className="mt-6 flex justify-center py-8"><div className="loading-dots"><span /><span /><span /></div></div>}
-          {!loading && assistanceList.length === 0 && <div className="empty-state mt-6">No assistance requests.</div>}
-          {!loading && assistanceList.length > 0 && (
-            <div className="mt-6 space-y-4">
-              {assistanceList.map((ar) => (
-                <div key={ar._id} className="rounded-xl border border-slate-200 bg-white p-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-semibold text-slate-900">{ar.scholarshipId?.title}</p>
-                      <p className="text-sm text-slate-500">Student: {ar.studentId?.name} ({ar.studentId?.email})</p>
-                      <span className={ar.status === "OPEN" ? "badge-warning" : "badge-success"}>{ar.status}</span>
-                    </div>
-                    {ar.status === "OPEN" && <button onClick={() => handleResolve(ar._id)} className="btn-primary !bg-emerald-600 hover:!bg-emerald-700 py-1.5 text-sm">Resolve</button>}
-                  </div>
-                  <div className="mt-3 border-t border-slate-200 pt-3 space-y-1">
-                    {(ar.messages || []).map((m, i) => (
-                      <p key={i} className="text-sm text-slate-700"><span className="font-medium">{m.from}:</span> {m.text}</p>
-                    ))}
-                  </div>
-                  {ar.status === "OPEN" && (
-                    <div className="mt-3 flex gap-2">
-                      <input type="text" placeholder="Reply…" value={replyingId === ar._id ? replyText : ""} onChange={(e) => { setReplyingId(ar._id); setReplyText(e.target.value); }} onFocus={() => setReplyingId(ar._id)} className="input-base flex-1" />
-                      <button onClick={() => handleReply(ar._id)} disabled={!(replyingId === ar._id && replyText.trim())} className="btn-primary disabled:opacity-50">Send</button>
-                    </div>
-                  )}
-                </div>
-              ))}
+        <section className="grid gap-4 lg:grid-cols-3">
+          <div className="card space-y-3">
+            <div className="flex gap-2">
+              <button className="btn-secondary py-1.5 text-sm" onClick={() => setAssistanceFilter("")}>All</button>
+              <button className="btn-secondary py-1.5 text-sm" onClick={() => setAssistanceFilter("OPEN")}>Open</button>
+              <button className="btn-secondary py-1.5 text-sm" onClick={() => setAssistanceFilter("RESOLVED")}>Resolved</button>
             </div>
-          )}
-        </div>
+            {assistance.map((a) => (
+              <button key={a._id} onClick={() => openAssistance(a._id)} className={`w-full rounded-lg border p-3 text-left ${selectedAssistanceId === a._id ? "border-teal-300 bg-teal-50" : "border-slate-200"}`}>
+                <p className="font-semibold text-slate-900">{a.scholarshipId?.title || "Scholarship"}</p>
+                <p className="text-sm text-slate-600">{a.studentId?.name || "-"}</p>
+                <span className={`badge mt-1 ${statusBadge(a.status)}`}>{a.status}</span>
+              </button>
+            ))}
+            {assistance.length === 0 && <div className="empty-state">No assistance requests.</div>}
+          </div>
+
+          <div className="card lg:col-span-2">
+            {!assistanceDetail && <div className="empty-state">Select a request to view student profile and documents.</div>}
+            {assistanceDetail && (
+              <div className="space-y-3">
+                <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">{assistanceDetail.disclaimer}</div>
+                <h3 className="text-lg font-semibold text-slate-900">{assistanceDetail.assistanceRequest?.scholarshipId?.title}</h3>
+                <p className="text-sm text-slate-600">Student: {assistanceDetail.assistanceRequest?.studentId?.name} ({assistanceDetail.assistanceRequest?.studentId?.email})</p>
+                <p className="text-sm text-slate-600">Application status: {assistanceDetail.application?.status || "No application found"}</p>
+                <div className="rounded-lg border border-slate-200 p-3 text-sm">
+                  <p>Course: {assistanceDetail.studentProfile?.education?.course || "-"}</p>
+                  <p>Marks: {assistanceDetail.studentProfile?.education?.percentage ?? "-"}%</p>
+                  <p>Income: INR {Number(assistanceDetail.studentProfile?.annualIncome || 0).toLocaleString("en-IN")}</p>
+                </div>
+                <div className="space-y-2">
+                  {(assistanceDetail.documents || []).map((doc) => (
+                    <div key={doc._id} className="rounded border border-slate-200 p-2 text-sm">
+                      <p className="font-medium">{doc.documentType}</p>
+                      {doc.fileUrl && <a href={doc.fileUrl} target="_blank" rel="noreferrer" className="text-teal-600 hover:underline">Open document</a>}
+                    </div>
+                  ))}
+                  {(assistanceDetail.documents || []).length === 0 && <p className="text-sm text-slate-500">No uploaded documents.</p>}
+                </div>
+                <div className="space-y-2">
+                  {(assistanceDetail.assistanceRequest?.messages || []).map((m) => (
+                    <p key={m._id || `${m.from}-${m.createdAt}`} className="rounded border border-slate-200 p-2 text-sm"><b>{m.from}:</b> {m.text}</p>
+                  ))}
+                </div>
+                {assistanceDetail.assistanceRequest?.status === "OPEN" && (
+                  <div className="flex gap-2">
+                    <input className="input-base" placeholder="Reply with guidance" value={replyText} onChange={(e) => setReplyText(e.target.value)} />
+                    <button className="btn-primary" disabled={loading || !replyText.trim()} onClick={() => handleReply(assistanceDetail.assistanceRequest._id)}>Send</button>
+                    <button className="btn-secondary" disabled={loading} onClick={() => handleResolve(assistanceDetail.assistanceRequest._id)}>Resolve</button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </section>
       )}
 
       {view === "APPLICATIONS" && (
-        <div className="card mt-8">
-          <h2 className="text-lg font-semibold text-slate-900">Application progress</h2>
-          {!applicationsScholarshipId ? (
-            <>
-              <p className="mt-2 text-slate-600">Select a scholarship:</p>
-              <ul className="mt-3 space-y-1">
-                {myScholarships.map((s) => (
-                  <li key={s._id}>
-                    <button onClick={() => { setApplicationsScholarshipId(s._id); fetchApplications(s._id); }} className="text-teal-600 font-medium hover:underline">
-                      {s.title}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </>
-          ) : (
-            <>
-              <button onClick={() => { setApplicationsScholarshipId(null); setApplicationsList([]); }} className="mt-2 text-sm text-slate-500 hover:text-slate-700">← Back</button>
-              {loading && <div className="mt-6 flex justify-center py-8"><div className="loading-dots"><span /><span /><span /></div></div>}
-              {!loading && (
-                <div className="mt-6 overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-slate-200 bg-slate-50/80">
-                        <th className="p-3 text-left text-sm font-semibold text-slate-700">Student</th>
-                        <th className="p-3 text-left text-sm font-semibold text-slate-700">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {applicationsList.map((a) => (
-                        <tr key={a._id} className="border-b border-slate-100 last:border-0">
-                          <td className="p-3">{a.studentId?.name} ({a.studentId?.email})</td>
-                          <td className="p-3"><span className="badge-neutral">{a.status}</span></td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-              {!loading && applicationsList.length === 0 && <p className="mt-6 text-slate-500">No applications for this scholarship.</p>}
-            </>
-          )}
-        </div>
+        <section className="card">
+          <h2 className="text-lg font-semibold">Scholarship applications (read-only)</h2>
+          <select className="input-base mt-3 max-w-md" value={applicationsScholarshipId} onChange={(e) => setApplicationsScholarshipId(e.target.value)}>
+            <option value="">Select scholarship</option>
+            {myScholarships.map((s) => <option key={s._id} value={s._id}>{s.title}</option>)}
+          </select>
+          <div className="mt-4 space-y-2">
+            {applications.map((a) => (
+              <article key={a._id} className="rounded-lg border border-slate-200 p-3">
+                <p className="font-medium text-slate-900">{a.studentId?.name} ({a.studentId?.email})</p>
+                <p className="text-sm text-slate-600">Status: {a.status} | Progress: {a.progressPercent || 0}%</p>
+              </article>
+            ))}
+            {applicationsScholarshipId && applications.length === 0 && <div className="empty-state">No applications found.</div>}
+            {!applicationsScholarshipId && <div className="empty-state">Select a scholarship to view applications.</div>}
+          </div>
+        </section>
       )}
     </div>
   );

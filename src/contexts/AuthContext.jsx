@@ -1,6 +1,7 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { loginAPI, signupAPI } from "../services/authService";
-const AuthContext = createContext();
+
+const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -8,22 +9,33 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const token = localStorage.getItem("token");
     const role = localStorage.getItem("role");
+    const id = localStorage.getItem("user_id");
+    const name = localStorage.getItem("user_name");
+    const email = localStorage.getItem("user_email");
     if (token && role) {
-      setUser({ role });
+      setUser({ id, role, name, email });
     }
   }, []);
 
   const login = async (formData) => {
-    const res = await loginAPI(formData);
-    localStorage.setItem("token", res.token);
-    localStorage.setItem("role", res.role);
-    setUser({ role: res.role });
-    return res.role;
+    const response = await loginAPI(formData);
+    localStorage.setItem("token", response.token);
+    localStorage.setItem("role", response.role);
+    localStorage.setItem("user_id", response.user?.id || "");
+    localStorage.setItem("user_name", response.user?.name || "");
+    localStorage.setItem("user_email", response.user?.email || "");
+
+    const currentUser = {
+      id: response.user?.id,
+      role: response.role,
+      name: response.user?.name,
+      email: response.user?.email
+    };
+    setUser(currentUser);
+    return currentUser;
   };
 
-  const signup = async (formData) => {
-    await signupAPI(formData);
-  };
+  const signup = async (formData) => signupAPI(formData);
 
   const logout = () => {
     const lang = localStorage.getItem("app_lang");
@@ -34,11 +46,15 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
-  return (
-    <AuthContext.Provider value={{ user, login, signup, logout}}>
-      {children}
-    </AuthContext.Provider>
-  );
+  const value = useMemo(() => ({ user, login, signup, logout }), [user]);
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within AuthProvider");
+  }
+  return context;
+};

@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getScholarshipById, createAssistanceRequest, getMyAssistanceRequests } from "../../services/studentService";
+import {
+  getScholarshipById,
+  createAssistanceRequest,
+  getMyAssistanceRequests,
+  startApplication
+} from "../../services/studentService";
 import { useTranslation } from "../../i18n";
 import { useAccessibility } from "../../contexts/AccessibilityContext";
 import { speakHint } from "../../utils/voiceHints";
@@ -30,6 +35,7 @@ export default function ScholarshipDetail() {
   const [showHelp, setShowHelp] = useState(false);
   const [helpMessage, setHelpMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [starting, setStarting] = useState(false);
   const [existingRequest, setExistingRequest] = useState(null);
   const [, setMyRequests] = useState([]);
 
@@ -83,6 +89,18 @@ export default function ScholarshipDetail() {
     }
   };
 
+  const handleStartApplication = async () => {
+    try {
+      setStarting(true);
+      await startApplication(id);
+      navigate("/student/applications");
+    } catch (e) {
+      setError(e?.response?.data?.message || "Failed to start application assistant");
+    } finally {
+      setStarting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="page-container flex justify-center py-16">
@@ -95,7 +113,7 @@ export default function ScholarshipDetail() {
       <div className="page-container py-12">
         <p className="text-red-600">{error || t("student.notFound")}</p>
         <button onClick={() => navigate("/student")} className="btn-secondary mt-4">
-          ← {t("student.backToScholarships")}
+          Back to scholarships
         </button>
       </div>
     );
@@ -110,7 +128,7 @@ export default function ScholarshipDetail() {
         onClick={() => navigate("/student")}
         className="mb-6 text-sm font-medium text-slate-600 hover:text-teal-600"
       >
-        ← {t("student.backToScholarships")}
+        Back to scholarships
       </button>
 
       <div className="card">
@@ -153,6 +171,46 @@ export default function ScholarshipDetail() {
             <VoiceReader text={`${t("student.importantNotice")}: ${scholarship.benefits}`} className="mt-2" />
           </div>
         )}
+
+        <div className="mt-4 border-t border-slate-200 pt-4">
+          <h2 className="text-lg font-semibold text-slate-900">Application Assistant</h2>
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            <div className="rounded-lg border border-slate-200 p-3">
+              <p className="text-sm font-semibold text-slate-900">Required documents</p>
+              <ul className="mt-2 space-y-1 text-sm text-slate-700">
+                {(scholarship.documentsRequired || []).map((doc) => <li key={doc}>- {doc}</li>)}
+                {(scholarship.documentsRequired || []).length === 0 && <li>No document list provided.</li>}
+              </ul>
+            </div>
+            <div className="rounded-lg border border-slate-200 p-3">
+              <p className="text-sm font-semibold text-slate-900">Step-by-step instructions</p>
+              <ol className="mt-2 space-y-1 text-sm text-slate-700">
+                {(scholarship.applicationProcess?.steps || []).map((step, idx) => <li key={`${step}-${idx}`}>{idx + 1}. {step}</li>)}
+                {(scholarship.applicationProcess?.steps || []).length === 0 && <li>No steps added yet.</li>}
+              </ol>
+            </div>
+          </div>
+          <div className="mt-3 rounded-lg border border-slate-200 p-3">
+            <p className="text-sm font-semibold text-slate-900">Common mistakes</p>
+            <ul className="mt-2 space-y-1 text-sm text-slate-700">
+              {(scholarship.commonMistakes || []).map((mistake, idx) => <li key={`${mistake}-${idx}`}>- {mistake}</li>)}
+              {(scholarship.commonMistakes || []).length === 0 && <li>No common mistakes listed.</li>}
+            </ul>
+          </div>
+          <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            {scholarship.disclaimer || "Final submission and verification happens on official portals only."}
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button disabled={starting} onClick={handleStartApplication} className="btn-primary">
+              {starting ? "Starting..." : "Start application assistant"}
+            </button>
+            {scholarship.applicationProcess?.applyLink && (
+              <a href={scholarship.applicationProcess.applyLink} target="_blank" rel="noreferrer" className="btn-secondary">
+                Open official application portal
+              </a>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="mt-8 card">

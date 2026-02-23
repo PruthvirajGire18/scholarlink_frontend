@@ -1,88 +1,112 @@
-import axios from "axios";
+import apiClient from "./apiClient";
 
-const API = axios.create({
-  baseURL: "http://localhost:5000/api",
-});
-
-API.interceptors.request.use((req) => {
-  const token = localStorage.getItem("token");
-  if (token) req.headers.Authorization = `Bearer ${token}`;
-  return req;
-});
-
-export const getAllModerators = async () => {
-  const res = await API.get("/admin/moderators");
-  return res.data;
-};
-
-export const createModerator = async (data) => {
-  const res = await API.post("/admin/moderator", data);
-  return res.data;
+export const getAdminAnalytics = async () => {
+  const response = await apiClient.get("/admin/dashboard/analytics");
+  return response.data;
 };
 
 export const getAllStudents = async () => {
-  const res = await API.get("/admin/students");
-  return res.data;
+  const response = await apiClient.get("/admin/students");
+  return response.data;
+};
+
+export const getStudentProfile = async (studentId) => {
+  const response = await apiClient.get(`/admin/students/${studentId}/profile`);
+  return response.data;
+};
+
+export const sendStudentReminder = async (studentId, payload) => {
+  const response = await apiClient.post(`/admin/students/${studentId}/reminder`, payload);
+  return response.data;
+};
+
+export const getAllModerators = async () => {
+  const response = await apiClient.get("/admin/moderators");
+  return response.data;
+};
+
+export const createModerator = async (payload) => {
+  const response = await apiClient.post("/admin/moderator", payload);
+  return response.data;
+};
+
+export const getAllScholarships = async (params = {}) => {
+  const response = await apiClient.get("/admin/scholarships", { params });
+  return response.data;
 };
 
 export const getPendingScholarships = async () => {
-  const res = await API.get("/admin/pending-schoolerships");
-  return res.data;
+  const response = await apiClient.get("/admin/scholarships/pending");
+  return response.data;
 };
 
 export const reviewScholarship = async (id, status, remarks = "") => {
-  const res = await API.put(`/admin/schoolerships/${id}`, { status, remarks });
-  return res.data;
-};
-
-export const getAllScholarships = async () => {
-  const res = await API.get("/admin/schoolerships");
-  return res.data;
+  const response = await apiClient.put(`/admin/scholarships/${id}/review`, { status, remarks });
+  return response.data;
 };
 
 export const getVerificationQueue = async () => {
-  const res = await API.get("/admin/scholarships/verification-queue");
-  return res.data;
+  const response = await apiClient.get("/admin/scholarships/verification-queue");
+  return response.data;
 };
 
 export const verifyScholarship = async (id) => {
-  const res = await API.put(`/admin/scholarships/${id}/verify`);
-  return res.data;
+  const response = await apiClient.put(`/admin/scholarships/${id}/verify`);
+  return response.data;
 };
 
 export const flagScholarship = async (id, reason) => {
-  const res = await API.put(`/admin/scholarships/${id}/flag`, { reason });
-  return res.data;
+  const response = await apiClient.put(`/admin/scholarships/${id}/flag`, { reason });
+  return response.data;
 };
 
 export const addInternalNote = async (id, note) => {
-  const res = await API.put(`/admin/scholarships/${id}/internal-note`, { note });
-  return res.data;
+  const response = await apiClient.put(`/admin/scholarships/${id}/internal-note`, { note });
+  return response.data;
 };
 
 export const getPendingDocuments = async () => {
-  const res = await API.get("/admin/documents/pending");
-  return res.data;
+  const response = await apiClient.get("/admin/documents/pending");
+  return response.data;
 };
 
-export const reviewDocument = async (id, status, rejectionReason = "") => {
-  const res = await API.put(`/admin/documents/${id}/review`, { status, rejectionReason });
-  return res.data;
+export const reviewDocument = async (id, status, rejectionReason = "", reviewComment = "") => {
+  const response = await apiClient.put(`/admin/documents/${id}/review`, {
+    status,
+    rejectionReason,
+    reviewComment
+  });
+  return response.data;
+};
+
+export const getApplications = async (params = {}) => {
+  const response = await apiClient.get("/admin/applications", { params });
+  return response.data;
+};
+
+export const updateApplicationStatus = async (id, payload) => {
+  const response = await apiClient.patch(`/admin/applications/${id}/status`, payload);
+  return response.data;
+};
+
+export const getCommonRejectionReasons = async () => {
+  const response = await apiClient.get("/admin/rejections/reasons");
+  return response.data;
 };
 
 export const getAuditLogs = async (params = {}) => {
-  const res = await API.get("/admin/audit-logs", { params });
-  return res.data;
+  const response = await apiClient.get("/admin/audit-logs", { params });
+  return response.data;
 };
 
 export const getFraudAlerts = async (resolved) => {
-  const res = await API.get("/admin/fraud-alerts", {
+  const response = await apiClient.get("/admin/fraud-alerts", {
     params: resolved !== undefined ? { resolved: String(resolved) } : {}
   });
-  return res.data;
+  return response.data;
 };
 
 export const markFraudAlertReviewed = async (id) => {
-  const res = await API.put(`/admin/fraud-alerts/${id}/reviewed`);
-  return res.data;
+  const response = await apiClient.put(`/admin/fraud-alerts/${id}/reviewed`);
+  return response.data;
 };

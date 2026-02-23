@@ -1,387 +1,353 @@
-import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import {
-  getAllModerators,
   createModerator,
-  getPendingScholarships,
-  getAllScholarships,
-  reviewScholarship,
-  getVerificationQueue,
+  getAdminAnalytics,
+  getAllModerators,
+  getAllStudents,
+  getApplications,
+  getCommonRejectionReasons,
   getPendingDocuments,
-  getFraudAlerts
+  reviewDocument,
+  sendStudentReminder,
+  updateApplicationStatus
 } from "../../services/adminService";
-import VerificationQueue from "./VerificationQueue";
-import DocumentReview from "./DocumentReview";
-import AuditLogs from "./AuditLogs";
-import FraudPanel from "./FraudPanel";
 
-// URL se view derive karo - taaki "View list" / Moderators pe click karte hi sahi content dikhe
-function getViewFromPathname(pathname) {
-  const path = pathname || "";
-  if (path === "/admin/scholarships" || path.startsWith("/admin/scholarships/")) return "PENDING";
-  if (path === "/admin/moderators" || path.startsWith("/admin/moderators")) return "MODERATORS";
-  if (path === "/admin/verification" || path.startsWith("/admin/verification")) return "VERIFICATION";
-  if (path === "/admin/documents" || path.startsWith("/admin/documents")) return "DOCUMENTS";
-  if (path === "/admin/audit-logs" || path.startsWith("/admin/audit-logs")) return "AUDIT";
-  if (path === "/admin/fraud" || path.startsWith("/admin/fraud")) return "FRAUD";
-  if (path === "/admin/all-scholarships" || path.startsWith("/admin/all-scholarships")) return "ALL";
-  if (path === "/admin" || path === "/admin/") return "OVERVIEW";
+const appStatusOptions = ["PENDING", "APPROVED", "REJECTED"];
+
+const statusBadge = (status) =>
+  status === "APPROVED"
+    ? "badge-success"
+    : status === "REJECTED"
+      ? "badge-danger"
+      : status === "IN_PROGRESS"
+        ? "badge-warning"
+        : "badge-neutral";
+
+const getView = (path) => {
+  if (path.startsWith("/admin/students")) return "STUDENTS";
+  if (path.startsWith("/admin/applications")) return "APPLICATIONS";
+  if (path.startsWith("/admin/documents")) return "DOCUMENTS";
+  if (path.startsWith("/admin/insights")) return "INSIGHTS";
+  if (path.startsWith("/admin/moderators")) return "MODERATORS";
   return "OVERVIEW";
-}
+};
+
+const buildDocumentLink = (fileUrl) =>
+  fileUrl?.startsWith("http") ? fileUrl : `http://localhost:5000${fileUrl}`;
 
 export default function AdminDashboard() {
   const location = useLocation();
-  const navigate = useNavigate();
-  const view = getViewFromPathname(location.pathname);
+  const view = getView(location.pathname);
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [overview, setOverview] = useState({ pendingScholarships: 0, pendingDocuments: 0, fraudAlerts: 0, moderatorsCount: 0 });
+  const [notice, setNotice] = useState("");
+
+  const [analytics, setAnalytics] = useState(null);
+  const [students, setStudents] = useState([]);
+  const [applications, setApplications] = useState([]);
+  const [documents, setDocuments] = useState([]);
+  const [reasons, setReasons] = useState([]);
+  const [moderators, setModerators] = useState([]);
+  const [moderatorForm, setModeratorForm] = useState({ name: "", email: "", password: "" });
+  const [search, setSearch] = useState("");
+  const [reminderForm, setReminderForm] = useState({});
+  const [reviewDraft, setReviewDraft] = useState({});
+  const [documentDraft, setDocumentDraft] = useState({});
+
+  const filteredStudents = useMemo(() => {
+    if (!search.trim()) return students;
+    const q = search.toLowerCase();
+    return students.filter(
+      (s) => s.name.toLowerCase().includes(q) || s.email.toLowerCase().includes(q)
+    );
+  }, [students, search]);
+
+  const reload = async () => {
+    const [analyticsData, studentsData, applicationsData, pendingDocs, reasonData, moderatorData] =
+      await Promise.all([
+        getAdminAnalytics(),
+        getAllStudents(),
+        getApplications(),
+        getPendingDocuments(),
+        getCommonRejectionReasons(),
+        getAllModerators()
+      ]);
+    setAnalytics(analyticsData);
+    setStudents(studentsData);
+    setApplications(applicationsData);
+    setDocuments(pendingDocs);
+    setReasons(reasonData);
+    setModerators(moderatorData);
+  };
 
   useEffect(() => {
-    if (view !== "OVERVIEW") return;
     (async () => {
-      try {
-        const [sch, docs, fraud, mods] = await Promise.all([
-          getPendingScholarships(),
-          getPendingDocuments(),
-          getFraudAlerts(false),
-          getAllModerators()
-        ]);
-        setOverview({
-          pendingScholarships: sch.length,
-          pendingDocuments: docs.length,
-          fraudAlerts: fraud.length,
-          moderatorsCount: mods.length
-        });
-      } catch {
-        setOverview({ pendingScholarships: 0, pendingDocuments: 0, fraudAlerts: 0, moderatorsCount: 0 });
-      }
-    })();
-  }, [view]);
-
-  /* =========================
-     MODERATOR STATE
-  ========================= */
-  const [moderators, setModerators] = useState([]);
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    password: ""
-  });
-
-  /* =========================
-     SCHOLARSHIP STATE
-  ========================= */
-  const [pendingScholarships, setPendingScholarships] = useState([]);
-  const [allScholarships, setAllScholarships] = useState([]);
-
-  /* =========================
-     FETCH MODERATORS
-  ========================= */
-  const fetchModerators = async () => {
-    try {
       setLoading(true);
       setError("");
-      const data = await getAllModerators();
-      setModerators(Array.isArray(data) ? data : []);
-    } catch {
-      setError("Failed to load moderators");
-      setModerators([]);
-    } finally {
-      setLoading(false);
+      try {
+        await reload();
+      } catch (e) {
+        setError(e?.response?.data?.message || e.message || "Failed to load admin dashboard");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const createNewModerator = async () => {
+    if (!moderatorForm.name || !moderatorForm.email || !moderatorForm.password) {
+      return setError("Name, email and password are required.");
     }
-  };
-
-  /* =========================
-     CREATE MODERATOR
-  ========================= */
-  const handleCreateModerator = async () => {
-    if (!form.name || !form.email || !form.password) {
-      return alert("All fields required");
-    }
-
-    await createModerator(form);
-    setForm({ name: "", email: "", password: "" });
-    fetchModerators();
-  };
-
-  /* =========================
-     FETCH PENDING SCHOLARSHIPS
-  ========================= */
-  const fetchPendingScholarships = async () => {
-    try {
-      setLoading(true);
-      const data = await getPendingScholarships();
-      setPendingScholarships(data);
-    } catch {
-      setError("Failed to load pending scholarships");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  /* =========================
-     FETCH ALL SCHOLARSHIPS
-  ========================= */
-  const fetchAllScholarships = async () => {
-    try {
-      setLoading(true);
-      const data = await getAllScholarships();
-      setAllScholarships(data);
-    } catch {
-      setError("Failed to load scholarships");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  /* =========================
-     REVIEW SCHOLARSHIP
-  ========================= */
-  const handleReview = async (id, status, remarks = "") => {
-    await reviewScholarship(id, status, remarks);
-    fetchPendingScholarships();
-    fetchAllScholarships();
-  };
-
-  /* =========================
-     ON VIEW CHANGE
-  ========================= */
-  useEffect(() => {
+    setBusy(true);
     setError("");
-    if (view === "MODERATORS") fetchModerators();
-    if (view === "PENDING") fetchPendingScholarships();
-    if (view === "ALL") fetchAllScholarships();
-  }, [view]);
+    try {
+      await createModerator(moderatorForm);
+      setModeratorForm({ name: "", email: "", password: "" });
+      await reload();
+      setNotice("Moderator created");
+    } catch (e) {
+      setError(e?.response?.data?.message || "Failed to create moderator");
+    } finally {
+      setBusy(false);
+    }
+  };
 
-  const navClass = (v) =>
-    view === v
-      ? "bg-teal-600 text-white shadow-sm"
-      : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50";
+  const sendReminder = async (studentId) => {
+    const message = reminderForm[studentId]?.trim();
+    if (!message) return setError("Reminder message cannot be empty.");
+    setBusy(true);
+    setError("");
+    try {
+      await sendStudentReminder(studentId, { message });
+      setReminderForm((prev) => ({ ...prev, [studentId]: "" }));
+      setNotice("Reminder sent");
+    } catch (e) {
+      setError(e?.response?.data?.message || "Failed to send reminder");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const updateStatus = async (applicationId) => {
+    const draft = reviewDraft[applicationId] || {};
+    if (!draft.status) return setError("Select status first.");
+    setBusy(true);
+    setError("");
+    try {
+      await updateApplicationStatus(applicationId, {
+        status: draft.status,
+        reviewComment: draft.reviewComment || "",
+        rejectionReason: draft.rejectionReason || ""
+      });
+      await reload();
+      setNotice("Application status updated");
+    } catch (e) {
+      setError(e?.response?.data?.message || "Failed to update application");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const reviewPendingDocument = async (documentId, status) => {
+    const draft = documentDraft[documentId] || {};
+    setBusy(true);
+    setError("");
+    try {
+      await reviewDocument(documentId, status, draft.rejectionReason || "", draft.reviewComment || "");
+      await reload();
+      setNotice(`Document ${status.toLowerCase()}`);
+    } catch (e) {
+      setError(e?.response?.data?.message || "Failed to review document");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (loading) return <div className="page-container"><div className="card text-center py-10">Loading...</div></div>;
 
   return (
-    <div className="page-container">
-      <h1 className="text-2xl font-bold text-slate-900">Admin Dashboard</h1>
-
-      <div className="mt-6 flex flex-wrap gap-2">
-        <button onClick={() => navigate("/admin")} className={`rounded-lg px-4 py-2 text-sm font-medium transition ${navClass("OVERVIEW")}`}>
-          Overview
-        </button>
-        <button onClick={() => navigate("/admin/moderators")} className={`rounded-lg px-4 py-2 text-sm font-medium transition ${navClass("MODERATORS")}`}>
-          Moderators
-        </button>
-        <button onClick={() => navigate("/admin/scholarships")} className={`rounded-lg px-4 py-2 text-sm font-medium transition ${navClass("PENDING")}`}>
-          Pending Scholarships
-        </button>
-        <button onClick={() => navigate("/admin/all-scholarships")} className={`rounded-lg px-4 py-2 text-sm font-medium transition ${navClass("ALL")}`}>
-          All Scholarships
-        </button>
-        <button onClick={() => navigate("/admin/verification")} className={`rounded-lg px-4 py-2 text-sm font-medium transition ${navClass("VERIFICATION")}`}>
-          Verification
-        </button>
-        <button onClick={() => navigate("/admin/documents")} className={`rounded-lg px-4 py-2 text-sm font-medium transition ${navClass("DOCUMENTS")}`}>
-          Documents
-        </button>
-        <button onClick={() => navigate("/admin/audit-logs")} className={`rounded-lg px-4 py-2 text-sm font-medium transition ${navClass("AUDIT")}`}>
-          Audit
-        </button>
-        <button onClick={() => navigate("/admin/fraud")} className={`rounded-lg px-4 py-2 text-sm font-medium transition ${navClass("FRAUD")}`}>
-          Fraud
-        </button>
-      </div>
-
-      {loading && (
-        <div className="mt-8 flex justify-center py-12">
-          <div className="loading-dots"><span /><span /><span /></div>
-        </div>
-      )}
-      {error && (
-        <div role="alert" className="mt-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
-          {error}
-        </div>
-      )}
+    <div className="page-container space-y-6">
+      {error && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+      {notice && <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{notice}</div>}
 
       {view === "OVERVIEW" && (
         <>
-          {/* Create Moderator form - sabse upar Overview pe */}
-          <div className="card mt-8">
-            <h2 className="text-lg font-bold text-slate-900">Create moderator</h2>
-            <p className="mt-1 text-sm text-slate-500">Add a new moderator. They can create and manage scholarships.</p>
-            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">Name</label>
-                <input
-                  placeholder="Full name"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="input-base w-full"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">Email</label>
-                <input
-                  type="email"
-                  placeholder="email@example.com"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  className="input-base w-full"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">Password</label>
-                <input
-                  type="password"
-                  placeholder="Min 8 characters"
-                  value={form.password}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  className="input-base w-full"
-                />
-              </div>
-              <div className="flex items-end">
-                <button onClick={handleCreateModerator} className="btn-primary w-full sm:w-auto">
-                  Create moderator
-                </button>
-              </div>
+          <section className="grid gap-4 md:grid-cols-5">
+            <article className="card"><p className="text-sm text-slate-500">Students</p><p className="mt-2 text-3xl font-bold text-teal-600">{analytics?.cards?.students || 0}</p></article>
+            <article className="card"><p className="text-sm text-slate-500">Moderators</p><p className="mt-2 text-3xl font-bold text-slate-700">{analytics?.cards?.moderators || 0}</p></article>
+            <article className="card"><p className="text-sm text-slate-500">Pending Scholarships</p><p className="mt-2 text-3xl font-bold text-amber-600">{analytics?.cards?.pendingScholarships || 0}</p></article>
+            <article className="card"><p className="text-sm text-slate-500">Pending Documents</p><p className="mt-2 text-3xl font-bold text-orange-600">{analytics?.cards?.pendingDocuments || 0}</p></article>
+            <article className="card"><p className="text-sm text-slate-500">Upcoming Deadlines</p><p className="mt-2 text-3xl font-bold text-red-600">{analytics?.cards?.upcomingDeadlines || 0}</p></article>
+          </section>
+          <section className="card">
+            <h2 className="text-lg font-semibold">Application Funnel</h2>
+            <div className="mt-4 grid gap-3 md:grid-cols-5">
+              {Object.entries(analytics?.applicationsByStatus || {}).map(([key, value]) => (
+                <div key={key} className="rounded-lg border border-slate-200 p-3">
+                  <p className="text-xs text-slate-500">{key}</p>
+                  <p className="text-2xl font-bold text-slate-900">{value}</p>
+                </div>
+              ))}
             </div>
-          </div>
-
-          <h3 className="mt-10 text-base font-semibold text-slate-800">Quick stats</h3>
-          <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="card">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500">Pending Scholarships</h3>
-              <p className="mt-2 text-3xl font-bold text-teal-600">{overview.pendingScholarships}</p>
-              <button onClick={() => navigate("/admin/scholarships")} className="btn-secondary mt-4 text-sm">
-                View
-              </button>
-            </div>
-            <div className="card">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500">Pending Documents</h3>
-              <p className="mt-2 text-3xl font-bold text-amber-600">{overview.pendingDocuments}</p>
-              <button onClick={() => navigate("/admin/documents")} className="btn-secondary mt-4 text-sm">
-                View
-              </button>
-            </div>
-            <div className="card">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500">Fraud alerts (open)</h3>
-              <p className="mt-2 text-3xl font-bold text-red-600">{overview.fraudAlerts}</p>
-              <button onClick={() => navigate("/admin/fraud")} className="btn-secondary mt-4 text-sm">
-                View
-              </button>
-            </div>
-            <div className="card">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500">Moderators</h3>
-              <p className="mt-2 text-3xl font-bold text-slate-700">{overview.moderatorsCount}</p>
-              <button onClick={() => navigate("/admin/moderators")} className="btn-secondary mt-4 text-sm">
-                View list
-              </button>
-            </div>
-          </div>
+          </section>
         </>
       )}
 
-      {view === "VERIFICATION" && <VerificationQueue />}
-      {view === "DOCUMENTS" && <DocumentReview />}
-      {view === "AUDIT" && <AuditLogs />}
-      {view === "FRAUD" && <FraudPanel />}
+      {view === "STUDENTS" && (
+        <section className="card">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-lg font-semibold">Students</h2>
+            <input className="input-base max-w-sm" placeholder="Search student" value={search} onChange={(e) => setSearch(e.target.value)} />
+          </div>
+          <div className="mt-4 space-y-3">
+            {filteredStudents.map((s) => (
+              <article key={s._id} className="rounded-xl border border-slate-200 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <h3 className="font-semibold">{s.name}</h3>
+                    <p className="text-sm text-slate-600">{s.email}</p>
+                    <p className="text-xs text-slate-500">
+                      Profile: {s.profile?.profileCompletion || 0}% | Income: INR {(s.profile?.annualIncome || 0).toLocaleString("en-IN")}
+                    </p>
+                  </div>
+                  <span className="badge badge-neutral">{s.profile?.education?.educationLevel || "N/A"}</span>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <input
+                    className="input-base flex-1 min-w-[220px]"
+                    placeholder="Reminder message"
+                    value={reminderForm[s._id] || ""}
+                    onChange={(e) => setReminderForm((prev) => ({ ...prev, [s._id]: e.target.value }))}
+                  />
+                  <button className="btn-primary" disabled={busy} onClick={() => sendReminder(s._id)}>Send reminder</button>
+                </div>
+              </article>
+            ))}
+            {filteredStudents.length === 0 && <div className="empty-state">No students found.</div>}
+          </div>
+        </section>
+      )}
+
+      {view === "APPLICATIONS" && (
+        <section className="card">
+          <h2 className="text-lg font-semibold">Application Tracking</h2>
+          <div className="mt-4 space-y-3">
+            {applications.map((a) => (
+              <article key={a._id} className="rounded-xl border border-slate-200 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <h3 className="font-semibold">{a.scholarshipId?.title}</h3>
+                    <p className="text-sm text-slate-600">{a.studentId?.name} ({a.studentId?.email})</p>
+                    <p className="text-xs text-slate-500">Progress: {a.progressPercent || 0}%</p>
+                  </div>
+                  <span className={`badge ${statusBadge(a.status)}`}>{a.status}</span>
+                </div>
+                <div className="mt-3 grid gap-2 md:grid-cols-3">
+                  <select
+                    className="input-base"
+                    value={reviewDraft[a._id]?.status || ""}
+                    onChange={(e) => setReviewDraft((prev) => ({ ...prev, [a._id]: { ...prev[a._id], status: e.target.value } }))}
+                  >
+                    <option value="">Select status</option>
+                    {appStatusOptions.map((status) => <option key={status} value={status}>{status}</option>)}
+                  </select>
+                  <input
+                    className="input-base"
+                    placeholder="Review comment"
+                    value={reviewDraft[a._id]?.reviewComment || ""}
+                    onChange={(e) => setReviewDraft((prev) => ({ ...prev, [a._id]: { ...prev[a._id], reviewComment: e.target.value } }))}
+                  />
+                  <input
+                    className="input-base"
+                    placeholder="Rejection reason"
+                    value={reviewDraft[a._id]?.rejectionReason || ""}
+                    onChange={(e) => setReviewDraft((prev) => ({ ...prev, [a._id]: { ...prev[a._id], rejectionReason: e.target.value } }))}
+                  />
+                </div>
+                <button className="btn-primary mt-3" disabled={busy} onClick={() => updateStatus(a._id)}>Update</button>
+              </article>
+            ))}
+            {applications.length === 0 && <div className="empty-state">No applications available.</div>}
+          </div>
+        </section>
+      )}
+
+      {view === "DOCUMENTS" && (
+        <section className="card">
+          <h2 className="text-lg font-semibold">Document Verification Queue</h2>
+          <div className="mt-4 space-y-3">
+            {documents.map((d) => (
+              <article key={d._id} className="rounded-xl border border-slate-200 p-4">
+                <h3 className="font-semibold">{d.documentType} | {d.userId?.name}</h3>
+                <p className="text-sm text-slate-600">{d.scholarshipId?.title}</p>
+                <a href={buildDocumentLink(d.fileUrl)} target="_blank" rel="noreferrer" className="mt-1 inline-block text-sm font-medium text-teal-600 hover:underline">Open document</a>
+                <div className="mt-3 grid gap-2 md:grid-cols-2">
+                  <input className="input-base" placeholder="Review comment" value={documentDraft[d._id]?.reviewComment || ""} onChange={(e) => setDocumentDraft((prev) => ({ ...prev, [d._id]: { ...prev[d._id], reviewComment: e.target.value } }))} />
+                  <input className="input-base" placeholder="Rejection reason" value={documentDraft[d._id]?.rejectionReason || ""} onChange={(e) => setDocumentDraft((prev) => ({ ...prev, [d._id]: { ...prev[d._id], rejectionReason: e.target.value } }))} />
+                </div>
+                <div className="mt-3 flex gap-2">
+                  <button className="btn-primary" disabled={busy} onClick={() => reviewPendingDocument(d._id, "APPROVED")}>Approve</button>
+                  <button className="btn-danger" disabled={busy} onClick={() => reviewPendingDocument(d._id, "REJECTED")}>Reject</button>
+                </div>
+              </article>
+            ))}
+            {documents.length === 0 && <div className="empty-state">No pending documents.</div>}
+          </div>
+        </section>
+      )}
+
+      {view === "INSIGHTS" && (
+        <section className="grid gap-4 md:grid-cols-2">
+          <article className="card">
+            <h2 className="text-lg font-semibold">Common Rejection Reasons</h2>
+            <div className="mt-4 space-y-2">
+              {reasons.map((r, idx) => (
+                <div key={`${r.reason}-${idx}`} className="rounded-lg border border-slate-200 p-3">
+                  <p className="font-medium text-slate-900">{r.reason}</p>
+                  <p className="text-sm text-slate-500">{r.source} | Count: {r.count}</p>
+                </div>
+              ))}
+              {reasons.length === 0 && <div className="empty-state">No rejection data available.</div>}
+            </div>
+          </article>
+          <article className="card">
+            <h2 className="text-lg font-semibold">Top Dashboard Insights</h2>
+            <ul className="mt-4 space-y-2 text-sm text-slate-700">
+              <li className="rounded-lg bg-slate-50 p-3">Use reminders to reduce missed deadlines for active applications.</li>
+              <li className="rounded-lg bg-slate-50 p-3">Rejected document trends can guide student training and checklist UX.</li>
+              <li className="rounded-lg bg-slate-50 p-3">Monitor pending queue daily to shorten scholarship cycle time.</li>
+            </ul>
+          </article>
+        </section>
+      )}
 
       {view === "MODERATORS" && (
-        <div className="mt-8">
-          <h2 className="text-xl font-bold text-slate-900 mb-6">Moderators</h2>
-
-          <div className="card">
-            <h3 className="text-lg font-semibold text-slate-900">Create moderator</h3>
-            <p className="mt-1 text-sm text-slate-500">Add a new moderator. They will get access to create and manage scholarships.</p>
-            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">Name</label>
-                <input
-                  placeholder="Full name"
-                  value={form.name}
-                  onChange={(e)=>setForm({...form,name:e.target.value})}
-                  className="input-base w-full"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">Email</label>
-                <input
-                  type="email"
-                  placeholder="email@example.com"
-                  value={form.email}
-                  onChange={(e)=>setForm({...form,email:e.target.value})}
-                  className="input-base w-full"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">Password</label>
-                <input
-                  type="password"
-                  placeholder="Min 8 characters"
-                  value={form.password}
-                  onChange={(e)=>setForm({...form,password:e.target.value})}
-                  className="input-base w-full"
-                />
-              </div>
-              <div className="flex items-end">
-                <button onClick={handleCreateModerator} className="btn-primary w-full sm:w-auto">
-                  Create moderator
-                </button>
-              </div>
+        <section className="grid gap-4 md:grid-cols-2">
+          <article className="card">
+            <h2 className="text-lg font-semibold">Create Moderator</h2>
+            <div className="mt-4 space-y-2">
+              <input className="input-base" placeholder="Name" value={moderatorForm.name} onChange={(e) => setModeratorForm((p) => ({ ...p, name: e.target.value }))} />
+              <input className="input-base" placeholder="Email" value={moderatorForm.email} onChange={(e) => setModeratorForm((p) => ({ ...p, email: e.target.value }))} />
+              <input className="input-base" type="password" placeholder="Password (min 8 chars)" value={moderatorForm.password} onChange={(e) => setModeratorForm((p) => ({ ...p, password: e.target.value }))} />
+              <button className="btn-primary" disabled={busy} onClick={createNewModerator}>Create moderator</button>
             </div>
-          </div>
-
-          <div className="card mt-6 min-h-[200px]">
-            <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Moderator list ({(moderators || []).length})</h3>
-            {loading ? (
-              <div className="flex justify-center py-12">
-                <div className="loading-dots"><span /><span /><span /></div>
-              </div>
-            ) : (
-              <ul className="mt-4 divide-y divide-slate-200">
-                {(moderators || []).length === 0 ? (
-                  <li className="py-8 text-center text-slate-500">No moderators yet. Create one using the form above.</li>
-                ) : (
-                  (moderators || []).map(m=>(
-                    <li key={m._id || m.email} className="py-3 first:pt-0">{m.name} <span className="text-slate-400">·</span> {m.email}</li>
-                  ))
-                )}
-              </ul>
-            )}
-          </div>
-        </div>
-      )}
-
-      {view === "PENDING" && (
-        <div className="mt-8 space-y-4">
-          {pendingScholarships.map(s=>(
-            <div key={s._id} className="card flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h3 className="font-semibold text-slate-900">{s.title}</h3>
-                <p className="text-sm text-slate-500">{s.status}</p>
-              </div>
-              <div className="flex gap-2">
-                <button onClick={()=>handleReview(s._id,"APPROVED")} className="btn-primary !bg-emerald-600 hover:!bg-emerald-700">
-                  Approve
-                </button>
-                <button onClick={()=>handleReview(s._id,"REJECTED")} className="btn-danger py-2">
-                  Reject
-                </button>
-              </div>
+          </article>
+          <article className="card">
+            <h2 className="text-lg font-semibold">Moderator List</h2>
+            <div className="mt-4 space-y-2">
+              {moderators.map((m) => (
+                <div key={m._id} className="rounded-lg border border-slate-200 p-3">
+                  <p className="font-medium text-slate-900">{m.name}</p>
+                  <p className="text-sm text-slate-600">{m.email}</p>
+                </div>
+              ))}
+              {moderators.length === 0 && <div className="empty-state">No moderators available.</div>}
             </div>
-          ))}
-        </div>
-      )}
-
-      {view === "ALL" && (
-        <div className="mt-8 space-y-4">
-          {allScholarships.map(s=>(
-            <div key={s._id} className="card">
-              <h3 className="font-semibold text-slate-900">{s.title}</h3>
-              <p className="mt-1 text-slate-600">₹{s.amount?.toLocaleString?.() ?? s.amount}</p>
-              <span className={s.status === "APPROVED" ? "badge-success" : s.status === "REJECTED" ? "badge-danger" : "badge-warning"}>{s.status}</span>
-            </div>
-          ))}
-        </div>
+          </article>
+        </section>
       )}
     </div>
   );

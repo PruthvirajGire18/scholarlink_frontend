@@ -18,12 +18,12 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
-      const role = await login(form);
-      if (role === "STUDENT") navigate("/student");
-      if (role === "MODERATOR") navigate("/moderator");
-      if (role === "ADMIN") navigate("/admin");
-    } catch {
-      setError(t("auth.invalidCredentials"));
+      const currentUser = await login(form);
+      if (currentUser.role === "STUDENT") navigate("/student");
+      if (currentUser.role === "MODERATOR") navigate("/moderator");
+      if (currentUser.role === "ADMIN") navigate("/admin");
+    } catch (error) {
+      setError(error.message || t("auth.invalidCredentials"));
     } finally {
       setLoading(false);
     }
