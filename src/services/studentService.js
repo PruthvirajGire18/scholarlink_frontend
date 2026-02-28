@@ -30,6 +30,11 @@ export const getScholarshipById = async (id) => {
   return response.data;
 };
 
+export const submitScholarshipFeedback = async (scholarshipId, payload = {}) => {
+  const response = await apiClient.post(`/student/scholarships/${scholarshipId}/feedback`, payload);
+  return response.data;
+};
+
 export const startApplication = async (scholarshipId) => {
   const response = await apiClient.post(`/student/applications/${scholarshipId}/start`);
   return response.data;

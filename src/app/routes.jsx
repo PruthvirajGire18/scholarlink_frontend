@@ -11,6 +11,7 @@ import VerificationQueue from "../pages/admin/VerificationQueue";
 import AuditLogs from "../pages/admin/AuditLogs";
 import FraudPanel from "../pages/admin/FraudPanel";
 import ScholarshipReview from "../pages/admin/ScholarshipReview";
+import IngestionPage from "../pages/admin/Ingestion";
 import ProtectedRoute from "../components/ProtectedRoute";
 import Home from "../pages/Home";
 
@@ -44,6 +45,7 @@ export default function AppRoutes() {
       <Route path="/admin/verification" element={<ProtectedRoute role="ADMIN"><VerificationQueue /></ProtectedRoute>} />
       <Route path="/admin/audit" element={<ProtectedRoute role="ADMIN"><AuditLogs /></ProtectedRoute>} />
       <Route path="/admin/fraud" element={<ProtectedRoute role="ADMIN"><FraudPanel /></ProtectedRoute>} />
+      <Route path="/admin/ingestion" element={<ProtectedRoute role="ADMIN"><IngestionPage /></ProtectedRoute>} />
     </Routes>
   );
 }

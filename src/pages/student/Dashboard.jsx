@@ -8,6 +8,7 @@ import {
   getStudentDashboard,
   markNotificationAsRead,
   saveMyProfile,
+  submitScholarshipFeedback,
   startApplication,
   submitApplication,
   updateMyApplicationStatus,
@@ -49,6 +50,7 @@ const fileOk = (file) =>
   file &&
   ["application/pdf", "image/jpeg", "image/png"].includes(file.type) &&
   file.size <= 5 * 1024 * 1024;
+const isExternalApplyLink = (value) => /^https?:\/\//i.test(String(value || "").trim());
 
 const getView = (path) => {
   if (path.startsWith("/student/profile")) return "PROFILE";
@@ -80,6 +82,11 @@ const mapProfile = (p) =>
       };
 
 const money = (n) => `INR ${(n || 0).toLocaleString("en-IN")}`;
+const getCompleteness = (scholarship) => Number(scholarship?.dataCompleteness?.score || 0);
+const getMissingFields = (scholarship) =>
+  Array.isArray(scholarship?.dataCompleteness?.missingFields)
+    ? scholarship.dataCompleteness.missingFields
+    : [];
 
 export default function StudentDashboard() {
   const location = useLocation();
@@ -100,6 +107,9 @@ export default function StudentDashboard() {
   const [activeAppId, setActiveAppId] = useState(null);
 
   const activeApp = useMemo(() => apps.find((a) => a._id === activeAppId) || apps[0] || null, [apps, activeAppId]);
+  const activeApplyLink = isExternalApplyLink(activeApp?.scholarshipId?.applicationProcess?.applyLink)
+    ? activeApp.scholarshipId.applicationProcess.applyLink
+    : "";
 
   const loadAll = async () => {
     const [dash, pf, dc, ap, nt] = await Promise.all([
@@ -234,6 +244,29 @@ export default function StudentDashboard() {
     }
   };
 
+  const submitDataFeedbackNow = async (scholarship) => {
+    if (!scholarship?._id) return;
+    const missingFields = getMissingFields(scholarship);
+    const message =
+      missingFields.length > 0
+        ? `Student reported missing data: ${missingFields.join(", ")}.`
+        : "Student reported scholarship data quality issue.";
+
+    setBusy(true);
+    setError("");
+    try {
+      const response = await submitScholarshipFeedback(scholarship._id, {
+        message,
+        missingFields
+      });
+      setNotice(response?.message || "Feedback sent to admin.");
+    } catch (e) {
+      setError(e?.response?.data?.message || "Failed to submit feedback");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const markRead = async (notificationId) => {
     try {
       await markNotificationAsRead(notificationId);
@@ -272,9 +305,17 @@ export default function StudentDashboard() {
                   <div className="flex items-center justify-between gap-2"><h3 className="font-semibold">{item.scholarship.title}</h3><span className="badge badge-success">{item.score}% match</span></div>
                   <p className="mt-1 text-sm text-slate-600">{money(item.scholarship.amount)} | {new Date(item.scholarship.deadline).toLocaleDateString("en-IN")}</p>
                   <p className="mt-2 text-xs text-emerald-700">{item.passes.join(" | ")}</p>
-                  <div className="mt-3 flex gap-2">
+                  <p className="mt-1 text-xs text-slate-600">Data completeness: {getCompleteness(item.scholarship)}%</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
                     <button disabled={busy} onClick={() => startApply(item.scholarship._id)} className="btn-primary">Start application</button>
                     <button className="btn-secondary" onClick={() => navigate(`/student/scholarships/${item.scholarship._id}`)}>View details</button>
+                    <button
+                      className="btn-secondary"
+                      disabled={busy}
+                      onClick={() => submitDataFeedbackNow(item.scholarship)}
+                    >
+                      Feedback
+                    </button>
                   </div>
                 </article>
               ))}
@@ -295,9 +336,17 @@ export default function StudentDashboard() {
                   </div>
                   <p className="mt-1 text-sm text-slate-600">{money(item.scholarship.amount)} | {new Date(item.scholarship.deadline).toLocaleDateString("en-IN")}</p>
                   <p className="mt-2 text-xs text-amber-700">Missing: {(item.missingDocuments || []).join(" | ") || "Update profile/documents"}</p>
-                  <div className="mt-3 flex gap-2">
+                  <p className="mt-1 text-xs text-slate-600">Data completeness: {getCompleteness(item.scholarship)}%</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
                     <button disabled={busy} onClick={() => startApply(item.scholarship._id)} className="btn-secondary">Start with guidance</button>
                     <button className="btn-secondary" onClick={() => navigate(`/student/scholarships/${item.scholarship._id}`)}>View details</button>
+                    <button
+                      className="btn-secondary"
+                      disabled={busy}
+                      onClick={() => submitDataFeedbackNow(item.scholarship)}
+                    >
+                      Feedback
+                    </button>
                   </div>
                 </article>
               ))}
@@ -347,8 +396,11 @@ export default function StudentDashboard() {
                     </span>
                     <span className="text-xs text-slate-500">{item.score}% match</span>
                   </div>
+                  <p className="mt-1 text-xs text-slate-600">
+                    Data completeness: {getCompleteness(item.scholarship)}%
+                  </p>
                   {item.fails?.length > 0 && <p className="mt-1 text-xs text-amber-700">Reasons: {item.fails.join(" | ")}</p>}
-                  <div className="mt-3 flex gap-2">
+                  <div className="mt-3 flex flex-wrap gap-2">
                     <button
                       className="btn-secondary disabled:opacity-50"
                       disabled={item.eligibilityStatus === "NOT_ELIGIBLE" || busy}
@@ -358,6 +410,13 @@ export default function StudentDashboard() {
                     </button>
                     <button className="btn-secondary" onClick={() => navigate(`/student/scholarships/${item.scholarship._id}`)}>
                       View details
+                    </button>
+                    <button
+                      className="btn-secondary"
+                      disabled={busy}
+                      onClick={() => submitDataFeedbackNow(item.scholarship)}
+                    >
+                      Feedback
                     </button>
                   </div>
                 </article>
@@ -412,14 +471,14 @@ export default function StudentDashboard() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => finalSubmit(activeApp._id)}
-                      disabled={busy || activeApp.status === "APPROVED" || !activeApp.scholarshipId?.applicationProcess?.applyLink}
+                      disabled={busy || activeApp.status === "APPROVED" || !activeApplyLink}
                       className="btn-primary"
                     >
                       Mark applied on official portal
                     </button>
-                    {activeApp.scholarshipId?.applicationProcess?.applyLink && (
+                    {activeApplyLink && (
                       <a
-                        href={activeApp.scholarshipId.applicationProcess.applyLink}
+                        href={activeApplyLink}
                         target="_blank"
                         rel="noreferrer"
                         className="btn-secondary"
@@ -429,7 +488,7 @@ export default function StudentDashboard() {
                     )}
                   </div>
                 </div>
-                {!activeApp.scholarshipId?.applicationProcess?.applyLink && (
+                {!activeApplyLink && (
                   <p className="text-sm text-red-600">Official application link missing. Contact moderator before continuing.</p>
                 )}
 

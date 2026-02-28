@@ -109,6 +109,7 @@ export default function Navbar() {
           { to: "/admin/insights", label: "Insights" },
           { to: "/admin/moderators", label: "Moderators" },
           { to: "/admin/verification", label: "Verification" },
+          { to: "/admin/ingestion", label: "Ingestion" },
           { to: "/admin/audit", label: "Audit" },
           { to: "/admin/fraud", label: "Fraud" }
         ]}

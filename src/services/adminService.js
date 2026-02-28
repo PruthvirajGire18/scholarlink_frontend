@@ -40,8 +40,33 @@ export const getPendingScholarships = async () => {
   return response.data;
 };
 
-export const reviewScholarship = async (id, status, remarks = "") => {
-  const response = await apiClient.put(`/admin/scholarships/${id}/review`, { status, remarks });
+export const reviewScholarship = async (
+  id,
+  status,
+  remarks = "",
+  enrichment = null,
+  feedbackIds = []
+) => {
+  const payload = { status, remarks };
+  if (enrichment && typeof enrichment === "object") {
+    payload.enrichment = enrichment;
+  }
+  if (Array.isArray(feedbackIds) && feedbackIds.length > 0) {
+    payload.feedbackIds = feedbackIds;
+  }
+  const response = await apiClient.put(`/admin/scholarships/${id}/review`, payload);
+  return response.data;
+};
+
+export const getScholarshipFeedback = async (status = "OPEN", limit = 200) => {
+  const response = await apiClient.get("/admin/scholarships/feedback", {
+    params: { status, limit }
+  });
+  return response.data;
+};
+
+export const updateScholarshipFeedbackStatus = async (id, payload) => {
+  const response = await apiClient.patch(`/admin/scholarships/feedback/${id}`, payload);
   return response.data;
 };
 
@@ -108,5 +133,22 @@ export const getFraudAlerts = async (resolved) => {
 
 export const markFraudAlertReviewed = async (id) => {
   const response = await apiClient.put(`/admin/fraud-alerts/${id}/reviewed`);
+  return response.data;
+};
+
+export const getIngestionStatus = async () => {
+  const response = await apiClient.get("/ingestion/status");
+  return response.data;
+};
+
+export const getIngestionRuns = async (limit = 20) => {
+  const response = await apiClient.get("/ingestion/runs", {
+    params: { limit }
+  });
+  return response.data;
+};
+
+export const runIngestionNow = async () => {
+  const response = await apiClient.post("/ingestion/run");
   return response.data;
 };

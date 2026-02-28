@@ -4,6 +4,7 @@ import {
   getScholarshipById,
   createAssistanceRequest,
   getMyAssistanceRequests,
+  submitScholarshipFeedback,
   startApplication
 } from "../../services/studentService";
 import { useTranslation } from "../../i18n";
@@ -14,6 +15,7 @@ import { VoiceReader } from "../../components/accessibility";
 function buildEligibilityText(s) {
   if (!s?.eligibility) return "";
   const e = s.eligibility;
+  if (String(e.summary || "").trim()) return String(e.summary).trim();
   const parts = [];
   if (e.minMarks != null) parts.push(`Minimum marks: ${e.minMarks}%`);
   if (e.maxIncome != null) parts.push(`Max income: ₹${e.maxIncome.toLocaleString()}`);
@@ -24,6 +26,10 @@ function buildEligibilityText(s) {
   return parts.join(". ") || "";
 }
 
+function isExternalApplyLink(value) {
+  return /^https?:\/\//i.test(String(value || "").trim());
+}
+
 export default function ScholarshipDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -32,9 +38,12 @@ export default function ScholarshipDetail() {
   const [scholarship, setScholarship] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [showHelp, setShowHelp] = useState(false);
   const [helpMessage, setHelpMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [feedbackNote, setFeedbackNote] = useState("");
+  const [submittingFeedback, setSubmittingFeedback] = useState(false);
   const [starting, setStarting] = useState(false);
   const [existingRequest, setExistingRequest] = useState(null);
   const [, setMyRequests] = useState([]);
@@ -101,6 +110,35 @@ export default function ScholarshipDetail() {
     }
   };
 
+  const handleDataFeedbackSubmit = async () => {
+    if (!scholarship?._id) return;
+
+    const missingFields = Array.isArray(scholarship?.dataCompleteness?.missingFields)
+      ? scholarship.dataCompleteness.missingFields
+      : [];
+    const summary =
+      missingFields.length > 0
+        ? `Missing fields: ${missingFields.join(", ")}.`
+        : "Student reported data quality issue.";
+    const note = feedbackNote.trim();
+    const message = note ? `${summary} Student note: ${note}` : summary;
+
+    try {
+      setSubmittingFeedback(true);
+      setError("");
+      const response = await submitScholarshipFeedback(scholarship._id, {
+        message,
+        missingFields
+      });
+      setNotice(response?.message || "Feedback sent to admin.");
+      setFeedbackNote("");
+    } catch (e) {
+      setError(e?.response?.data?.message || "Failed to submit data feedback");
+    } finally {
+      setSubmittingFeedback(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="page-container flex justify-center py-16">
@@ -108,7 +146,7 @@ export default function ScholarshipDetail() {
       </div>
     );
   }
-  if (error || !scholarship) {
+  if (!scholarship) {
     return (
       <div className="page-container py-12">
         <p className="text-red-600">{error || t("student.notFound")}</p>
@@ -121,6 +159,12 @@ export default function ScholarshipDetail() {
 
   const eligibilityText = buildEligibilityText(scholarship);
   const deadlineText = new Date(scholarship.deadline).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
+  const applyLink = isExternalApplyLink(scholarship.applicationProcess?.applyLink)
+    ? scholarship.applicationProcess.applyLink
+    : "";
+  const completeness = scholarship?.dataCompleteness || {};
+  const completenessScore = Number(completeness.score || 0);
+  const missingFields = Array.isArray(completeness.missingFields) ? completeness.missingFields : [];
 
   return (
     <div className="page-container max-w-3xl" aria-label={t("voiceHints.scrollEligibility")}>
@@ -130,6 +174,17 @@ export default function ScholarshipDetail() {
       >
         Back to scholarships
       </button>
+
+      {notice && (
+        <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          {notice}
+        </div>
+      )}
+      {error && (
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
 
       <div className="card">
         <div className="flex flex-wrap items-start justify-between gap-3">
@@ -173,6 +228,38 @@ export default function ScholarshipDetail() {
         )}
 
         <div className="mt-4 border-t border-slate-200 pt-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-lg font-semibold text-slate-900">Fetched Data Completeness</h2>
+            <span className={`badge ${completenessScore >= 80 ? "badge-success" : completenessScore >= 50 ? "badge-warning" : "badge-danger"}`}>
+              {completenessScore}%
+            </span>
+          </div>
+          {missingFields.length > 0 ? (
+            <p className="mt-2 text-sm text-amber-700">
+              Missing data: {missingFields.join(" | ")}
+            </p>
+          ) : (
+            <p className="mt-2 text-sm text-emerald-700">No critical data fields are missing.</p>
+          )}
+          <div className="mt-3 space-y-2">
+            <textarea
+              className="input-base min-h-[90px] w-full resize-y"
+              rows={3}
+              placeholder="Optional note for admin about missing details"
+              value={feedbackNote}
+              onChange={(e) => setFeedbackNote(e.target.value)}
+            />
+            <button
+              className="btn-secondary"
+              onClick={handleDataFeedbackSubmit}
+              disabled={submittingFeedback}
+            >
+              {submittingFeedback ? "Sending..." : "Send feedback to admin"}
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-4 border-t border-slate-200 pt-4">
           <h2 className="text-lg font-semibold text-slate-900">Application Assistant</h2>
           <div className="mt-3 grid gap-3 md:grid-cols-2">
             <div className="rounded-lg border border-slate-200 p-3">
@@ -204,8 +291,8 @@ export default function ScholarshipDetail() {
             <button disabled={starting} onClick={handleStartApplication} className="btn-primary">
               {starting ? "Starting..." : "Start application assistant"}
             </button>
-            {scholarship.applicationProcess?.applyLink && (
-              <a href={scholarship.applicationProcess.applyLink} target="_blank" rel="noreferrer" className="btn-secondary">
+            {applyLink && (
+              <a href={applyLink} target="_blank" rel="noreferrer" className="btn-secondary">
                 Open official application portal
               </a>
             )}
