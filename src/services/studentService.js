@@ -15,6 +15,17 @@ export const saveMyProfile = async (payload) => {
   return response.data;
 };
 
+export const uploadProfileDocument = async (documentType, file) => {
+  const formData = new FormData();
+  formData.append("documentType", documentType);
+  formData.append("file", file);
+
+  const response = await apiClient.post("/student/profile/documents", formData, {
+    headers: { "Content-Type": "multipart/form-data" }
+  });
+  return response.data;
+};
+
 export const getRecommendedScholarships = async () => {
   const response = await apiClient.get("/student/scholarships/recommended");
   return response.data;

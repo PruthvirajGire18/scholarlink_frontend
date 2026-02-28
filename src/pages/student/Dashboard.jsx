@@ -13,8 +13,60 @@ import {
   submitApplication,
   updateMyApplicationStatus,
   updateApplicationStep,
-  uploadApplicationDocument
+  uploadApplicationDocument,
+  uploadProfileDocument
 } from "../../services/studentService";
+
+const CATEGORY_OPTIONS = ["OPEN", "OBC", "SC", "ST", "VJNT", "EWS", "SEBC"];
+const EDUCATION_LEVEL_OPTIONS = ["DIPLOMA", "UG", "PG", "PHD"];
+const MARITAL_STATUS_OPTIONS = ["SINGLE", "MARRIED", "DIVORCED", "WIDOWED", "OTHER"];
+const PROFILE_DOCUMENT_OPTIONS = [
+  { key: "aadhaar", label: "Aadhaar Card" },
+  { key: "incomeCertificate", label: "Income Certificate" },
+  { key: "domicileCertificate", label: "Domicile Certificate" },
+  { key: "marksheet", label: "Latest Marksheet" },
+  { key: "bankPassbook", label: "Bank Passbook" },
+  { key: "admissionLetter", label: "Admission Letter" },
+  { key: "feeReceipt", label: "Fee Receipt" },
+  { key: "bonafideCertificate", label: "Bonafide Certificate" },
+  { key: "casteCertificate", label: "Caste Certificate" },
+  { key: "casteValidityCertificate", label: "Caste Validity Certificate" },
+  { key: "nonCreamyLayerCertificate", label: "Non-Creamy Layer Certificate" },
+  { key: "disabilityCertificate", label: "Disability Certificate" },
+  { key: "minorityDeclaration", label: "Minority Declaration" },
+  { key: "rationCard", label: "Ration Card" },
+  { key: "transferCertificate", label: "Transfer/Leaving Certificate" },
+  { key: "gapCertificate", label: "Gap Certificate" },
+  { key: "selfDeclaration", label: "Self Declaration / Undertaking" }
+];
+
+const emptyProfileDocument = () => ({
+  isUploaded: false,
+  fileUrl: "",
+  cloudinaryPublicId: "",
+  fileName: "",
+  mimeType: "",
+  sizeBytes: 0,
+  uploadedAt: null,
+  source: "PROFILE_UPLOAD"
+});
+
+const normalizeProfileDocument = (value) => {
+  if (value === true) {
+    return {
+      ...emptyProfileDocument(),
+      isUploaded: true
+    };
+  }
+  if (!value || typeof value !== "object") {
+    return emptyProfileDocument();
+  }
+  return {
+    ...emptyProfileDocument(),
+    ...value,
+    isUploaded: value.isUploaded === true || Boolean(String(value.fileUrl || "").trim())
+  };
+};
 
 const profileSeed = {
   gender: "",
@@ -22,8 +74,82 @@ const profileSeed = {
   dateOfBirth: "",
   category: "OPEN",
   annualIncome: "",
-  address: { state: "", district: "", pincode: "" },
-  education: { educationLevel: "DIPLOMA", course: "", currentYear: "", percentage: "" }
+  personal: {
+    firstName: "",
+    middleName: "",
+    lastName: "",
+    fatherName: "",
+    motherName: "",
+    maritalStatus: "SINGLE",
+    religion: "",
+    caste: "",
+    subCaste: "",
+    nationality: "Indian",
+    aadhaarNumber: "",
+    panNumber: "",
+    abcId: "",
+    domicileState: "Maharashtra"
+  },
+  address: {
+    state: "",
+    district: "",
+    taluka: "",
+    city: "",
+    village: "",
+    pincode: "",
+    line1: "",
+    line2: "",
+    correspondenceSameAsPermanent: true
+  },
+  family: {
+    guardianName: "",
+    fatherOccupation: "",
+    motherOccupation: "",
+    familySize: ""
+  },
+  education: {
+    educationLevel: "DIPLOMA",
+    course: "",
+    branch: "",
+    institute: "",
+    instituteCode: "",
+    university: "",
+    currentYear: "",
+    currentSemester: "",
+    admissionYear: "",
+    admissionType: "",
+    previousExamBoard: "",
+    previousPassingYear: "",
+    previousPercentage: "",
+    percentage: ""
+  },
+  bankDetails: {
+    accountHolderName: "",
+    accountNumber: "",
+    ifscCode: "",
+    bankName: "",
+    branchName: "",
+    isAadhaarSeeded: false
+  },
+  financial: {
+    hasDisability: false,
+    isFirstGenerationLearner: false,
+    guardianOccupation: "",
+    incomeCertificateNumber: "",
+    bplCardHolder: false,
+    isFarmerChild: false,
+    familyIncomeSource: ""
+  },
+  social: {
+    minorityStatus: false,
+    minorityType: "",
+    isOrphan: false,
+    isHosteller: false
+  },
+  documents: PROFILE_DOCUMENT_OPTIONS.reduce((acc, item) => {
+    acc[item.key] = emptyProfileDocument();
+    return acc;
+  }, {})
 };
 
 const statusClass = {
@@ -32,18 +158,6 @@ const statusClass = {
   PENDING: "badge-neutral",
   APPROVED: "badge-success",
   REJECTED: "badge-danger"
-};
-
-const eligibilityBadgeClass = {
-  ELIGIBLE: "badge-success",
-  PARTIALLY_ELIGIBLE: "badge-warning",
-  NOT_ELIGIBLE: "badge-danger"
-};
-
-const eligibilityLabel = {
-  ELIGIBLE: "Eligible",
-  PARTIALLY_ELIGIBLE: "Partially Eligible",
-  NOT_ELIGIBLE: "Not Eligible"
 };
 
 const fileOk = (file) =>
@@ -68,17 +182,82 @@ const mapProfile = (p) =>
         dateOfBirth: p.dateOfBirth ? new Date(p.dateOfBirth).toISOString().slice(0, 10) : "",
         category: p.category || "OPEN",
         annualIncome: p.annualIncome || "",
+        personal: {
+          firstName: p.personal?.firstName || "",
+          middleName: p.personal?.middleName || "",
+          lastName: p.personal?.lastName || "",
+          fatherName: p.personal?.fatherName || "",
+          motherName: p.personal?.motherName || "",
+          maritalStatus: p.personal?.maritalStatus || "SINGLE",
+          religion: p.personal?.religion || "",
+          caste: p.personal?.caste || "",
+          subCaste: p.personal?.subCaste || "",
+          nationality: p.personal?.nationality || "Indian",
+          aadhaarNumber: p.personal?.aadhaarNumber || "",
+          panNumber: p.personal?.panNumber || "",
+          abcId: p.personal?.abcId || "",
+          domicileState: p.personal?.domicileState || "Maharashtra"
+        },
         address: {
           state: p.address?.state || "",
           district: p.address?.district || "",
-          pincode: p.address?.pincode || ""
+          taluka: p.address?.taluka || "",
+          city: p.address?.city || "",
+          village: p.address?.village || "",
+          pincode: p.address?.pincode || "",
+          line1: p.address?.line1 || "",
+          line2: p.address?.line2 || "",
+          correspondenceSameAsPermanent: p.address?.correspondenceSameAsPermanent ?? true
+        },
+        family: {
+          guardianName: p.family?.guardianName || "",
+          fatherOccupation: p.family?.fatherOccupation || "",
+          motherOccupation: p.family?.motherOccupation || "",
+          familySize: p.family?.familySize || ""
         },
         education: {
           educationLevel: p.education?.educationLevel || "DIPLOMA",
           course: p.education?.course || "",
+          branch: p.education?.branch || "",
+          institute: p.education?.institute || "",
+          instituteCode: p.education?.instituteCode || "",
+          university: p.education?.university || "",
           currentYear: p.education?.currentYear || "",
+          currentSemester: p.education?.currentSemester || "",
+          admissionYear: p.education?.admissionYear || "",
+          admissionType: p.education?.admissionType || "",
+          previousExamBoard: p.education?.previousExamBoard || "",
+          previousPassingYear: p.education?.previousPassingYear || "",
+          previousPercentage: p.education?.previousPercentage || "",
           percentage: p.education?.percentage || ""
-        }
+        },
+        bankDetails: {
+          accountHolderName: p.bankDetails?.accountHolderName || "",
+          accountNumber: p.bankDetails?.accountNumber || "",
+          ifscCode: p.bankDetails?.ifscCode || "",
+          bankName: p.bankDetails?.bankName || "",
+          branchName: p.bankDetails?.branchName || "",
+          isAadhaarSeeded: p.bankDetails?.isAadhaarSeeded || false
+        },
+        financial: {
+          hasDisability: p.financial?.hasDisability || false,
+          isFirstGenerationLearner: p.financial?.isFirstGenerationLearner || false,
+          guardianOccupation: p.financial?.guardianOccupation || "",
+          incomeCertificateNumber: p.financial?.incomeCertificateNumber || "",
+          bplCardHolder: p.financial?.bplCardHolder || false,
+          isFarmerChild: p.financial?.isFarmerChild || false,
+          familyIncomeSource: p.financial?.familyIncomeSource || ""
+        },
+        social: {
+          minorityStatus: p.social?.minorityStatus || false,
+          minorityType: p.social?.minorityType || "",
+          isOrphan: p.social?.isOrphan || false,
+          isHosteller: p.social?.isHosteller || false
+        },
+        documents: PROFILE_DOCUMENT_OPTIONS.reduce((acc, item) => {
+          acc[item.key] = normalizeProfileDocument(p.documents?.[item.key]);
+          return acc;
+        }, {})
       };
 
 const money = (n) => `INR ${(n || 0).toLocaleString("en-IN")}`;
@@ -112,10 +291,11 @@ export default function StudentDashboard() {
     : "";
 
   const loadAll = async () => {
+    const discoveryParams = { ...filters, eligibleOnly: true };
     const [dash, pf, dc, ap, nt] = await Promise.all([
       getStudentDashboard(),
       getMyProfile(),
-      discoverScholarships(filters),
+      discoverScholarships(discoveryParams),
       getMyApplications(),
       getMyNotifications()
     ]);
@@ -160,19 +340,66 @@ export default function StudentDashboard() {
     setBusy(true);
     setError("");
     try {
+      const toNumberOrNull = (value) => {
+        if (value === "" || value === null || value === undefined) return null;
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : null;
+      };
+
       await saveMyProfile({
         ...profile,
-        annualIncome: Number(profile.annualIncome || 0),
+        annualIncome: toNumberOrNull(profile.annualIncome),
+        family: {
+          ...profile.family,
+          familySize: toNumberOrNull(profile.family.familySize)
+        },
         education: {
           ...profile.education,
-          currentYear: Number(profile.education.currentYear || 0),
-          percentage: Number(profile.education.percentage || 0)
+          currentYear: toNumberOrNull(profile.education.currentYear),
+          currentSemester: toNumberOrNull(profile.education.currentSemester),
+          admissionYear: toNumberOrNull(profile.education.admissionYear),
+          previousPassingYear: toNumberOrNull(profile.education.previousPassingYear),
+          previousPercentage: toNumberOrNull(profile.education.previousPercentage),
+          percentage: toNumberOrNull(profile.education.percentage)
         }
       });
       await loadAll();
       setNotice("Profile saved");
     } catch (e) {
       setError(e?.response?.data?.message || "Failed to save profile");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const uploadProfileDocumentNow = async (documentType, file) => {
+    if (!fileOk(file)) return setError("Only PDF/JPG/PNG up to 5MB are allowed.");
+    if (!documentType) return;
+
+    setBusy(true);
+    setError("");
+    try {
+      const response = await uploadProfileDocument(documentType, file);
+      if (response?.profile) {
+        setProfile(mapProfile(response.profile));
+      } else {
+        const currentDoc = normalizeProfileDocument(profile.documents?.[documentType]);
+        setProfile((prev) => ({
+          ...prev,
+          documents: {
+            ...(prev.documents || {}),
+            [documentType]: {
+              ...currentDoc,
+              isUploaded: true,
+              fileName: file.name
+            }
+          }
+        }));
+      }
+      await loadAll();
+      setNotice(response?.message || "Profile document uploaded.");
+    } catch (e) {
+      setError(e?.response?.data?.message || "Profile document upload failed");
     } finally {
       setBusy(false);
     }
@@ -236,7 +463,7 @@ export default function StudentDashboard() {
     setBusy(true);
     setError("");
     try {
-      setDiscover(await discoverScholarships(filters));
+      setDiscover(await discoverScholarships({ ...filters, eligibleOnly: true }));
     } catch (e) {
       setError(e?.response?.data?.message || "Failed to filter scholarships");
     } finally {
@@ -288,7 +515,7 @@ export default function StudentDashboard() {
           <section className="grid gap-4 md:grid-cols-5">
             <article className="card"><p className="text-sm text-slate-500">Profile</p><p className="mt-2 text-3xl font-bold text-teal-600">{dashboard?.profileCompletion || 0}%</p></article>
             <article className="card"><p className="text-sm text-slate-500">Eligible</p><p className="mt-2 text-3xl font-bold text-teal-600">{dashboard?.metrics?.eligibleScholarships || 0}</p></article>
-            <article className="card"><p className="text-sm text-slate-500">Partially Eligible</p><p className="mt-2 text-3xl font-bold text-amber-600">{dashboard?.metrics?.partiallyEligibleScholarships || 0}</p></article>
+            <article className="card"><p className="text-sm text-slate-500">Matching Mode</p><p className="mt-2 text-xl font-bold text-indigo-600">{dashboard?.matchingMode === "ELIGIBLE_ONLY" ? "Eligible Only" : "Complete Profile"}</p></article>
             <article className="card"><p className="text-sm text-slate-500">In Progress</p><p className="mt-2 text-3xl font-bold text-amber-600">{dashboard?.metrics?.inProgressApplications || 0}</p></article>
             <article className="card"><p className="text-sm text-slate-500">Approved</p><p className="mt-2 text-3xl font-bold text-emerald-600">{dashboard?.metrics?.approvedCount || 0}</p></article>
           </section>
@@ -298,7 +525,7 @@ export default function StudentDashboard() {
           </section>
 
           <section className="card">
-            <div className="flex items-center justify-between gap-2"><h2 className="text-lg font-semibold">Recommended Scholarships</h2><button className="btn-secondary" onClick={() => navigate("/student/profile")}>Edit profile</button></div>
+            <div className="flex items-center justify-between gap-2"><h2 className="text-lg font-semibold">Matching & Eligible Scholarships</h2><button className="btn-secondary" onClick={() => navigate("/student/profile")}>Edit profile</button></div>
             <div className="mt-4 grid gap-3 lg:grid-cols-2">
               {(dashboard?.recommendedScholarships || []).map((item) => (
                 <article key={item.scholarship._id} className="rounded-xl border border-slate-200 p-4">
@@ -320,40 +547,16 @@ export default function StudentDashboard() {
                 </article>
               ))}
               {(dashboard?.recommendedScholarships || []).length === 0 && (
-                <div className="empty-state lg:col-span-2">No fully eligible scholarships yet. Check partially eligible options below.</div>
+                <div className="empty-state lg:col-span-2">Complete MahaDBT profile details and required documents to unlock eligible scholarships.</div>
               )}
             </div>
           </section>
 
           <section className="card">
-            <h2 className="text-lg font-semibold">Partially Eligible (Action Required)</h2>
-            <div className="mt-4 grid gap-3 lg:grid-cols-2">
-              {(dashboard?.partiallyEligibleScholarships || []).map((item) => (
-                <article key={item.scholarship._id} className="rounded-xl border border-slate-200 p-4">
-                  <div className="flex items-center justify-between gap-2">
-                    <h3 className="font-semibold">{item.scholarship.title}</h3>
-                    <span className="badge badge-warning">{item.score}% match</span>
-                  </div>
-                  <p className="mt-1 text-sm text-slate-600">{money(item.scholarship.amount)} | {new Date(item.scholarship.deadline).toLocaleDateString("en-IN")}</p>
-                  <p className="mt-2 text-xs text-amber-700">Missing: {(item.missingDocuments || []).join(" | ") || "Update profile/documents"}</p>
-                  <p className="mt-1 text-xs text-slate-600">Data completeness: {getCompleteness(item.scholarship)}%</p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <button disabled={busy} onClick={() => startApply(item.scholarship._id)} className="btn-secondary">Start with guidance</button>
-                    <button className="btn-secondary" onClick={() => navigate(`/student/scholarships/${item.scholarship._id}`)}>View details</button>
-                    <button
-                      className="btn-secondary"
-                      disabled={busy}
-                      onClick={() => submitDataFeedbackNow(item.scholarship)}
-                    >
-                      Feedback
-                    </button>
-                  </div>
-                </article>
-              ))}
-              {(dashboard?.partiallyEligibleScholarships || []).length === 0 && (
-                <div className="empty-state lg:col-span-2">No partially eligible scholarships right now.</div>
-              )}
-            </div>
+            <h2 className="text-lg font-semibold">Eligibility Rule</h2>
+            <p className="mt-2 text-sm text-slate-600">
+              Dashboard now shows only scholarships where your profile is fully eligible. Partial or not-eligible scholarships are hidden.
+            </p>
           </section>
 
           <section className="card">
@@ -378,6 +581,7 @@ export default function StudentDashboard() {
           </section>
 
           <section className="card">
+            <h2 className="text-lg font-semibold">Search Eligible Scholarships</h2>
             <div className="grid gap-3 md:grid-cols-3">
               <input className="input-base" placeholder="Search scholarships" value={filters.search} onChange={(e) => setFilters((p) => ({ ...p, search: e.target.value }))} />
               <select className="input-base" value={filters.providerType} onChange={(e) => setFilters((p) => ({ ...p, providerType: e.target.value }))}>
@@ -390,23 +594,17 @@ export default function StudentDashboard() {
                 <article key={item.scholarship._id} className="rounded-xl border border-slate-200 p-4">
                   <h3 className="font-semibold">{item.scholarship.title}</h3>
                   <p className="mt-1 text-sm text-slate-600">{money(item.scholarship.amount)}</p>
-                  <div className="mt-2 flex items-center gap-2">
-                    <span className={`badge ${eligibilityBadgeClass[item.eligibilityStatus] || "badge-neutral"}`}>
-                      {eligibilityLabel[item.eligibilityStatus] || "Unknown"}
-                    </span>
-                    <span className="text-xs text-slate-500">{item.score}% match</span>
-                  </div>
+                  <div className="mt-2 flex items-center gap-2"><span className="badge badge-success">Eligible</span><span className="text-xs text-slate-500">{item.score}% match</span></div>
                   <p className="mt-1 text-xs text-slate-600">
                     Data completeness: {getCompleteness(item.scholarship)}%
                   </p>
-                  {item.fails?.length > 0 && <p className="mt-1 text-xs text-amber-700">Reasons: {item.fails.join(" | ")}</p>}
                   <div className="mt-3 flex flex-wrap gap-2">
                     <button
                       className="btn-secondary disabled:opacity-50"
-                      disabled={item.eligibilityStatus === "NOT_ELIGIBLE" || busy}
+                      disabled={busy}
                       onClick={() => startApply(item.scholarship._id)}
                     >
-                      {item.eligibilityStatus === "ELIGIBLE" ? "Start application" : "Start with guidance"}
+                      Start application
                     </button>
                     <button className="btn-secondary" onClick={() => navigate(`/student/scholarships/${item.scholarship._id}`)}>
                       View details
@@ -421,28 +619,170 @@ export default function StudentDashboard() {
                   </div>
                 </article>
               ))}
+              {discover.length === 0 && <div className="empty-state md:col-span-2">No eligible scholarships found for current filters.</div>}
             </div>
           </section>
         </>
       )}
 
       {view === "PROFILE" && (
-        <section className="card space-y-3">
-          <h2 className="text-lg font-semibold">Student Profile</h2>
-          <div className="grid gap-3 md:grid-cols-3">
-            <select className="input-base" value={profile.gender} onChange={(e) => setProfile((p) => ({ ...p, gender: e.target.value }))}><option value="">Gender</option><option value="MALE">Male</option><option value="FEMALE">Female</option><option value="OTHER">Other</option></select>
-            <input className="input-base" type="date" value={profile.dateOfBirth} onChange={(e) => setProfile((p) => ({ ...p, dateOfBirth: e.target.value }))} />
-            <input className="input-base" placeholder="Mobile" value={profile.mobile} onChange={(e) => setProfile((p) => ({ ...p, mobile: e.target.value }))} />
-            <input className="input-base" placeholder="State" value={profile.address.state} onChange={(e) => setProfile((p) => ({ ...p, address: { ...p.address, state: e.target.value } }))} />
-            <input className="input-base" placeholder="District" value={profile.address.district} onChange={(e) => setProfile((p) => ({ ...p, address: { ...p.address, district: e.target.value } }))} />
-            <input className="input-base" placeholder="Pincode" value={profile.address.pincode} onChange={(e) => setProfile((p) => ({ ...p, address: { ...p.address, pincode: e.target.value } }))} />
-            <select className="input-base" value={profile.education.educationLevel} onChange={(e) => setProfile((p) => ({ ...p, education: { ...p.education, educationLevel: e.target.value } }))}><option value="DIPLOMA">Diploma</option><option value="UG">UG</option><option value="PG">PG</option><option value="PHD">PHD</option></select>
-            <input className="input-base" placeholder="Course" value={profile.education.course} onChange={(e) => setProfile((p) => ({ ...p, education: { ...p.education, course: e.target.value } }))} />
-            <input className="input-base" type="number" placeholder="Year" value={profile.education.currentYear} onChange={(e) => setProfile((p) => ({ ...p, education: { ...p.education, currentYear: e.target.value } }))} />
-            <input className="input-base" type="number" placeholder="Percentage" value={profile.education.percentage} onChange={(e) => setProfile((p) => ({ ...p, education: { ...p.education, percentage: e.target.value } }))} />
-            <select className="input-base" value={profile.category} onChange={(e) => setProfile((p) => ({ ...p, category: e.target.value }))}><option value="OPEN">OPEN</option><option value="OBC">OBC</option><option value="SC">SC</option><option value="ST">ST</option><option value="EWS">EWS</option><option value="SEBC">SEBC</option><option value="VJNT">VJNT</option></select>
-            <input className="input-base" type="number" placeholder="Annual income" value={profile.annualIncome} onChange={(e) => setProfile((p) => ({ ...p, annualIncome: e.target.value }))} />
-          </div>
+        <section className="space-y-4">
+          <article className="card">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-lg font-semibold">Student Profile</h2>
+              <span className="badge badge-neutral">{dashboard?.profileCompletion || 0}% complete</span>
+            </div>
+            <p className="mt-1 text-sm text-slate-600">
+              Fill all profile and document details to unlock strictly eligible scholarships only.
+            </p>
+          </article>
+
+          <article className="card space-y-3">
+            <h3 className="text-base font-semibold text-slate-900">Personal Details</h3>
+            <div className="grid gap-3 md:grid-cols-3">
+              <input className="input-base" placeholder="First name" value={profile.personal.firstName} onChange={(e) => setProfile((p) => ({ ...p, personal: { ...p.personal, firstName: e.target.value } }))} />
+              <input className="input-base" placeholder="Middle name" value={profile.personal.middleName} onChange={(e) => setProfile((p) => ({ ...p, personal: { ...p.personal, middleName: e.target.value } }))} />
+              <input className="input-base" placeholder="Last name" value={profile.personal.lastName} onChange={(e) => setProfile((p) => ({ ...p, personal: { ...p.personal, lastName: e.target.value } }))} />
+              <input className="input-base" placeholder="Father name" value={profile.personal.fatherName} onChange={(e) => setProfile((p) => ({ ...p, personal: { ...p.personal, fatherName: e.target.value } }))} />
+              <input className="input-base" placeholder="Mother name" value={profile.personal.motherName} onChange={(e) => setProfile((p) => ({ ...p, personal: { ...p.personal, motherName: e.target.value } }))} />
+              <input className="input-base" placeholder="Mobile number" value={profile.mobile} onChange={(e) => setProfile((p) => ({ ...p, mobile: e.target.value }))} />
+              <select className="input-base" value={profile.gender} onChange={(e) => setProfile((p) => ({ ...p, gender: e.target.value }))}><option value="">Gender</option><option value="MALE">Male</option><option value="FEMALE">Female</option><option value="OTHER">Other</option></select>
+              <input className="input-base" type="date" value={profile.dateOfBirth} onChange={(e) => setProfile((p) => ({ ...p, dateOfBirth: e.target.value }))} />
+              <select className="input-base" value={profile.personal.maritalStatus} onChange={(e) => setProfile((p) => ({ ...p, personal: { ...p.personal, maritalStatus: e.target.value } }))}>
+                {MARITAL_STATUS_OPTIONS.map((status) => <option key={status} value={status}>{status}</option>)}
+              </select>
+              <input className="input-base" placeholder="Religion" value={profile.personal.religion} onChange={(e) => setProfile((p) => ({ ...p, personal: { ...p.personal, religion: e.target.value } }))} />
+              <input className="input-base" placeholder="Caste" value={profile.personal.caste} onChange={(e) => setProfile((p) => ({ ...p, personal: { ...p.personal, caste: e.target.value } }))} />
+              <input className="input-base" placeholder="Sub caste" value={profile.personal.subCaste} onChange={(e) => setProfile((p) => ({ ...p, personal: { ...p.personal, subCaste: e.target.value } }))} />
+              <select className="input-base" value={profile.category} onChange={(e) => setProfile((p) => ({ ...p, category: e.target.value }))}>{CATEGORY_OPTIONS.map((item) => <option key={item} value={item}>{item}</option>)}</select>
+              <input className="input-base" placeholder="Nationality" value={profile.personal.nationality} onChange={(e) => setProfile((p) => ({ ...p, personal: { ...p.personal, nationality: e.target.value } }))} />
+              <input className="input-base" type="number" placeholder="Annual income (INR)" value={profile.annualIncome} onChange={(e) => setProfile((p) => ({ ...p, annualIncome: e.target.value }))} />
+              <input className="input-base" placeholder="Aadhaar number" value={profile.personal.aadhaarNumber} onChange={(e) => setProfile((p) => ({ ...p, personal: { ...p.personal, aadhaarNumber: e.target.value } }))} />
+              <input className="input-base" placeholder="PAN number" value={profile.personal.panNumber} onChange={(e) => setProfile((p) => ({ ...p, personal: { ...p.personal, panNumber: e.target.value } }))} />
+              <input className="input-base" placeholder="ABC ID" value={profile.personal.abcId} onChange={(e) => setProfile((p) => ({ ...p, personal: { ...p.personal, abcId: e.target.value } }))} />
+              <input className="input-base" placeholder="Domicile state" value={profile.personal.domicileState} onChange={(e) => setProfile((p) => ({ ...p, personal: { ...p.personal, domicileState: e.target.value } }))} />
+            </div>
+          </article>
+
+          <article className="card space-y-3">
+            <h3 className="text-base font-semibold text-slate-900">Address Details</h3>
+            <div className="grid gap-3 md:grid-cols-3">
+              <input className="input-base md:col-span-2" placeholder="Address line 1" value={profile.address.line1} onChange={(e) => setProfile((p) => ({ ...p, address: { ...p.address, line1: e.target.value } }))} />
+              <input className="input-base md:col-span-1" placeholder="Address line 2" value={profile.address.line2} onChange={(e) => setProfile((p) => ({ ...p, address: { ...p.address, line2: e.target.value } }))} />
+              <input className="input-base" placeholder="State" value={profile.address.state} onChange={(e) => setProfile((p) => ({ ...p, address: { ...p.address, state: e.target.value } }))} />
+              <input className="input-base" placeholder="District" value={profile.address.district} onChange={(e) => setProfile((p) => ({ ...p, address: { ...p.address, district: e.target.value } }))} />
+              <input className="input-base" placeholder="Taluka" value={profile.address.taluka} onChange={(e) => setProfile((p) => ({ ...p, address: { ...p.address, taluka: e.target.value } }))} />
+              <input className="input-base" placeholder="City" value={profile.address.city} onChange={(e) => setProfile((p) => ({ ...p, address: { ...p.address, city: e.target.value } }))} />
+              <input className="input-base" placeholder="Village" value={profile.address.village} onChange={(e) => setProfile((p) => ({ ...p, address: { ...p.address, village: e.target.value } }))} />
+              <input className="input-base" placeholder="Pincode" value={profile.address.pincode} onChange={(e) => setProfile((p) => ({ ...p, address: { ...p.address, pincode: e.target.value } }))} />
+            </div>
+            <label className="flex items-center gap-2 text-sm text-slate-700">
+              <input type="checkbox" checked={!!profile.address.correspondenceSameAsPermanent} onChange={(e) => setProfile((p) => ({ ...p, address: { ...p.address, correspondenceSameAsPermanent: e.target.checked } }))} />
+              Correspondence address same as permanent address
+            </label>
+          </article>
+
+          <article className="card space-y-3">
+            <h3 className="text-base font-semibold text-slate-900">Academic Details</h3>
+            <div className="grid gap-3 md:grid-cols-3">
+              <select className="input-base" value={profile.education.educationLevel} onChange={(e) => setProfile((p) => ({ ...p, education: { ...p.education, educationLevel: e.target.value } }))}>{EDUCATION_LEVEL_OPTIONS.map((item) => <option key={item} value={item}>{item}</option>)}</select>
+              <input className="input-base" placeholder="Course" value={profile.education.course} onChange={(e) => setProfile((p) => ({ ...p, education: { ...p.education, course: e.target.value } }))} />
+              <input className="input-base" placeholder="Branch / Specialization" value={profile.education.branch} onChange={(e) => setProfile((p) => ({ ...p, education: { ...p.education, branch: e.target.value } }))} />
+              <input className="input-base" placeholder="Institute" value={profile.education.institute} onChange={(e) => setProfile((p) => ({ ...p, education: { ...p.education, institute: e.target.value } }))} />
+              <input className="input-base" placeholder="Institute code" value={profile.education.instituteCode} onChange={(e) => setProfile((p) => ({ ...p, education: { ...p.education, instituteCode: e.target.value } }))} />
+              <input className="input-base" placeholder="University / Board" value={profile.education.university} onChange={(e) => setProfile((p) => ({ ...p, education: { ...p.education, university: e.target.value } }))} />
+              <input className="input-base" type="number" placeholder="Admission year" value={profile.education.admissionYear} onChange={(e) => setProfile((p) => ({ ...p, education: { ...p.education, admissionYear: e.target.value } }))} />
+              <input className="input-base" placeholder="Admission type" value={profile.education.admissionType} onChange={(e) => setProfile((p) => ({ ...p, education: { ...p.education, admissionType: e.target.value } }))} />
+              <input className="input-base" type="number" placeholder="Current year" value={profile.education.currentYear} onChange={(e) => setProfile((p) => ({ ...p, education: { ...p.education, currentYear: e.target.value } }))} />
+              <input className="input-base" type="number" placeholder="Current semester" value={profile.education.currentSemester} onChange={(e) => setProfile((p) => ({ ...p, education: { ...p.education, currentSemester: e.target.value } }))} />
+              <input className="input-base" placeholder="Previous exam board" value={profile.education.previousExamBoard} onChange={(e) => setProfile((p) => ({ ...p, education: { ...p.education, previousExamBoard: e.target.value } }))} />
+              <input className="input-base" type="number" placeholder="Previous passing year" value={profile.education.previousPassingYear} onChange={(e) => setProfile((p) => ({ ...p, education: { ...p.education, previousPassingYear: e.target.value } }))} />
+              <input className="input-base" type="number" placeholder="Previous percentage" value={profile.education.previousPercentage} onChange={(e) => setProfile((p) => ({ ...p, education: { ...p.education, previousPercentage: e.target.value } }))} />
+              <input className="input-base" type="number" placeholder="Current percentage" value={profile.education.percentage} onChange={(e) => setProfile((p) => ({ ...p, education: { ...p.education, percentage: e.target.value } }))} />
+            </div>
+          </article>
+
+          <article className="card space-y-3">
+            <h3 className="text-base font-semibold text-slate-900">Bank Details</h3>
+            <div className="grid gap-3 md:grid-cols-3">
+              <input className="input-base" placeholder="Account holder name" value={profile.bankDetails.accountHolderName} onChange={(e) => setProfile((p) => ({ ...p, bankDetails: { ...p.bankDetails, accountHolderName: e.target.value } }))} />
+              <input className="input-base" placeholder="Account number" value={profile.bankDetails.accountNumber} onChange={(e) => setProfile((p) => ({ ...p, bankDetails: { ...p.bankDetails, accountNumber: e.target.value } }))} />
+              <input className="input-base" placeholder="IFSC code" value={profile.bankDetails.ifscCode} onChange={(e) => setProfile((p) => ({ ...p, bankDetails: { ...p.bankDetails, ifscCode: e.target.value } }))} />
+              <input className="input-base" placeholder="Bank name" value={profile.bankDetails.bankName} onChange={(e) => setProfile((p) => ({ ...p, bankDetails: { ...p.bankDetails, bankName: e.target.value } }))} />
+              <input className="input-base" placeholder="Branch name" value={profile.bankDetails.branchName} onChange={(e) => setProfile((p) => ({ ...p, bankDetails: { ...p.bankDetails, branchName: e.target.value } }))} />
+            </div>
+            <label className="flex items-center gap-2 text-sm text-slate-700">
+              <input type="checkbox" checked={!!profile.bankDetails.isAadhaarSeeded} onChange={(e) => setProfile((p) => ({ ...p, bankDetails: { ...p.bankDetails, isAadhaarSeeded: e.target.checked } }))} />
+              Aadhaar seeded with bank account
+            </label>
+          </article>
+
+          <article className="card space-y-3">
+            <h3 className="text-base font-semibold text-slate-900">Family, Financial & Social</h3>
+            <div className="grid gap-3 md:grid-cols-3">
+              <input className="input-base" placeholder="Guardian name" value={profile.family.guardianName} onChange={(e) => setProfile((p) => ({ ...p, family: { ...p.family, guardianName: e.target.value } }))} />
+              <input className="input-base" placeholder="Father occupation" value={profile.family.fatherOccupation} onChange={(e) => setProfile((p) => ({ ...p, family: { ...p.family, fatherOccupation: e.target.value } }))} />
+              <input className="input-base" placeholder="Mother occupation" value={profile.family.motherOccupation} onChange={(e) => setProfile((p) => ({ ...p, family: { ...p.family, motherOccupation: e.target.value } }))} />
+              <input className="input-base" type="number" placeholder="Family size" value={profile.family.familySize} onChange={(e) => setProfile((p) => ({ ...p, family: { ...p.family, familySize: e.target.value } }))} />
+              <input className="input-base" placeholder="Income certificate number" value={profile.financial.incomeCertificateNumber} onChange={(e) => setProfile((p) => ({ ...p, financial: { ...p.financial, incomeCertificateNumber: e.target.value } }))} />
+              <input className="input-base" placeholder="Family income source" value={profile.financial.familyIncomeSource} onChange={(e) => setProfile((p) => ({ ...p, financial: { ...p.financial, familyIncomeSource: e.target.value } }))} />
+              <input className="input-base" placeholder="Guardian occupation (financial)" value={profile.financial.guardianOccupation} onChange={(e) => setProfile((p) => ({ ...p, financial: { ...p.financial, guardianOccupation: e.target.value } }))} />
+              <input className="input-base" placeholder="Minority type (if applicable)" value={profile.social.minorityType} onChange={(e) => setProfile((p) => ({ ...p, social: { ...p.social, minorityType: e.target.value } }))} />
+            </div>
+            <div className="grid gap-2 md:grid-cols-3 text-sm text-slate-700">
+              <label className="flex items-center gap-2"><input type="checkbox" checked={!!profile.financial.hasDisability} onChange={(e) => setProfile((p) => ({ ...p, financial: { ...p.financial, hasDisability: e.target.checked } }))} />Has disability</label>
+              <label className="flex items-center gap-2"><input type="checkbox" checked={!!profile.financial.isFirstGenerationLearner} onChange={(e) => setProfile((p) => ({ ...p, financial: { ...p.financial, isFirstGenerationLearner: e.target.checked } }))} />First generation learner</label>
+              <label className="flex items-center gap-2"><input type="checkbox" checked={!!profile.financial.bplCardHolder} onChange={(e) => setProfile((p) => ({ ...p, financial: { ...p.financial, bplCardHolder: e.target.checked } }))} />BPL card holder</label>
+              <label className="flex items-center gap-2"><input type="checkbox" checked={!!profile.financial.isFarmerChild} onChange={(e) => setProfile((p) => ({ ...p, financial: { ...p.financial, isFarmerChild: e.target.checked } }))} />Child of farmer</label>
+              <label className="flex items-center gap-2"><input type="checkbox" checked={!!profile.social.minorityStatus} onChange={(e) => setProfile((p) => ({ ...p, social: { ...p.social, minorityStatus: e.target.checked } }))} />Minority student</label>
+              <label className="flex items-center gap-2"><input type="checkbox" checked={!!profile.social.isOrphan} onChange={(e) => setProfile((p) => ({ ...p, social: { ...p.social, isOrphan: e.target.checked } }))} />Orphan</label>
+              <label className="flex items-center gap-2"><input type="checkbox" checked={!!profile.social.isHosteller} onChange={(e) => setProfile((p) => ({ ...p, social: { ...p.social, isHosteller: e.target.checked } }))} />Hosteller</label>
+            </div>
+          </article>
+
+          <article className="card space-y-3">
+            <h3 className="text-base font-semibold text-slate-900">Profile Document Uploads</h3>
+            <p className="text-sm text-slate-600">
+              Upload exact documents here. Cloudinary file URL is stored in your profile record.
+            </p>
+            <div className="grid gap-3 md:grid-cols-2">
+              {PROFILE_DOCUMENT_OPTIONS.map((doc) => {
+                const docMeta = normalizeProfileDocument(profile.documents?.[doc.key]);
+                const uploaded = docMeta.isUploaded;
+                const url = String(docMeta.fileUrl || "").trim();
+                return (
+                  <div key={doc.key} className="rounded-lg border border-slate-200 p-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-sm font-medium text-slate-900">{doc.label}</p>
+                      <span className={`badge ${uploaded ? "badge-success" : "badge-warning"}`}>
+                        {uploaded ? "Uploaded" : "Not uploaded"}
+                      </span>
+                    </div>
+                    {docMeta.fileName && (
+                      <p className="mt-1 text-xs text-slate-500">{docMeta.fileName}</p>
+                    )}
+                    {url && (
+                      <a
+                        className="mt-1 inline-block text-xs font-semibold text-teal-700 hover:underline"
+                        href={url}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Open uploaded file
+                      </a>
+                    )}
+                    <input
+                      type="file"
+                      className="mt-2 text-xs"
+                      onChange={(e) => uploadProfileDocumentNow(doc.key, e.target.files?.[0])}
+                      disabled={busy}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </article>
+
           <button disabled={busy} onClick={saveProfileNow} className="btn-primary">Save profile</button>
         </section>
       )}
