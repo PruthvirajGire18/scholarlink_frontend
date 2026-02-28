@@ -166,6 +166,20 @@ const fileOk = (file) =>
   file.size <= 5 * 1024 * 1024;
 const isExternalApplyLink = (value) => /^https?:\/\//i.test(String(value || "").trim());
 
+const buildEligibilityText = (scholarship) => {
+  const e = scholarship?.eligibility || {};
+  const summary = String(e.summary || "").trim();
+  if (summary) return summary;
+  const parts = [];
+  if (e.minMarks != null) parts.push(`Minimum marks: ${e.minMarks}%`);
+  if (e.maxIncome != null) parts.push(`Max income: INR ${Number(e.maxIncome).toLocaleString("en-IN")}`);
+  if (Array.isArray(e.categories) && e.categories.length > 0) parts.push(`Categories: ${e.categories.join(", ")}`);
+  if (e.gender && e.gender !== "ANY") parts.push(`Gender: ${e.gender}`);
+  if (Array.isArray(e.statesAllowed) && e.statesAllowed.length > 0) parts.push(`States: ${e.statesAllowed.join(", ")}`);
+  if (e.educationLevel) parts.push(`Education: ${e.educationLevel}`);
+  return parts.join(". ");
+};
+
 const getView = (path) => {
   if (path.startsWith("/student/profile")) return "PROFILE";
   if (path.startsWith("/student/applications")) return "APPLICATIONS";
@@ -289,6 +303,7 @@ export default function StudentDashboard() {
   const activeApplyLink = isExternalApplyLink(activeApp?.scholarshipId?.applicationProcess?.applyLink)
     ? activeApp.scholarshipId.applicationProcess.applyLink
     : "";
+  const activeEligibilityText = buildEligibilityText(activeApp?.scholarshipId);
 
   const loadAll = async () => {
     const discoveryParams = { ...filters, eligibleOnly: true };
@@ -834,6 +849,53 @@ export default function StudentDashboard() {
 
                 <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                   Final submission and verification happens on official government/NGO portals only.
+                </div>
+
+                <div className="rounded-lg border border-slate-200 p-4">
+                  <h4 className="text-base font-semibold text-slate-900">Scholarship Details (Same as View Details)</h4>
+                  <p className="mt-2 text-sm text-slate-700">
+                    {activeApp.scholarshipId?.description || "Description not available."}
+                  </p>
+                  <div className="mt-3 grid gap-3 md:grid-cols-2">
+                    <div className="rounded-lg border border-slate-200 p-3">
+                      <p className="text-xs text-slate-500">Amount</p>
+                      <p className="text-sm font-semibold text-teal-700">
+                        INR {Number(activeApp.scholarshipId?.amount || 0).toLocaleString("en-IN")}
+                      </p>
+                    </div>
+                    <div className="rounded-lg border border-slate-200 p-3">
+                      <p className="text-xs text-slate-500">Deadline</p>
+                      <p className="text-sm font-semibold text-slate-900">
+                        {activeApp.scholarshipId?.deadline
+                          ? new Date(activeApp.scholarshipId.deadline).toLocaleDateString("en-IN")
+                          : "-"}
+                      </p>
+                    </div>
+                    <div className="rounded-lg border border-slate-200 p-3">
+                      <p className="text-xs text-slate-500">Provider</p>
+                      <p className="text-sm font-semibold text-slate-900">
+                        {activeApp.scholarshipId?.provider?.name || "-"}
+                      </p>
+                    </div>
+                    <div className="rounded-lg border border-slate-200 p-3">
+                      <p className="text-xs text-slate-500">Provider Type</p>
+                      <p className="text-sm font-semibold text-slate-900">
+                        {activeApp.scholarshipId?.provider?.type || "-"}
+                      </p>
+                    </div>
+                  </div>
+                  {activeEligibilityText && (
+                    <div className="mt-3 rounded-lg border border-slate-200 p-3">
+                      <p className="text-xs text-slate-500">Eligibility</p>
+                      <p className="mt-1 text-sm text-slate-700">{activeEligibilityText}</p>
+                    </div>
+                  )}
+                  {activeApp.scholarshipId?.benefits && (
+                    <div className="mt-3 rounded-lg border border-slate-200 p-3">
+                      <p className="text-xs text-slate-500">Benefits</p>
+                      <p className="mt-1 text-sm text-slate-700">{activeApp.scholarshipId.benefits}</p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid gap-3 md:grid-cols-2">
