@@ -19,7 +19,8 @@ export const API_ORIGIN = (() => {
 })();
 
 const apiClient = axios.create({
-  baseURL: API_BASE_URL
+  baseURL: API_BASE_URL,
+  withCredentials: true
 });
 
 apiClient.interceptors.request.use((config) => {
