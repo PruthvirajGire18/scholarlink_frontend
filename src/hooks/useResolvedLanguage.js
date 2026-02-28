@@ -38,8 +38,9 @@ export default function useResolvedLanguage() {
 
   const resolvedLanguage = useMemo(() => {
     const i18nextLang = getI18nextLanguage();
-    return normalizeAppLanguage(profileLanguage || i18nextLang || lang || "en");
-  }, [profileLanguage, lang]);
+    // User-selected app language should always win for live switching.
+    return normalizeAppLanguage(lang || profileLanguage || i18nextLang || "en");
+  }, [lang, profileLanguage]);
 
   return {
     resolvedLanguage,
