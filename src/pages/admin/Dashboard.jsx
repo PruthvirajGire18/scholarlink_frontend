@@ -12,6 +12,7 @@ import {
   sendStudentReminder,
   updateApplicationStatus
 } from "../../services/adminService";
+import { API_ORIGIN } from "../../services/apiClient";
 
 const appStatusOptions = ["PENDING", "APPROVED", "REJECTED"];
 
@@ -33,8 +34,12 @@ const getView = (path) => {
   return "OVERVIEW";
 };
 
-const buildDocumentLink = (fileUrl) =>
-  fileUrl?.startsWith("http") ? fileUrl : `http://localhost:5000${fileUrl}`;
+const buildDocumentLink = (fileUrl) => {
+  if (!fileUrl) return "#";
+  if (fileUrl.startsWith("http")) return fileUrl;
+  const normalizedPath = fileUrl.startsWith("/") ? fileUrl : `/${fileUrl}`;
+  return `${API_ORIGIN}${normalizedPath}`;
+};
 
 export default function AdminDashboard() {
   const location = useLocation();
