@@ -5,17 +5,37 @@ import { useTranslation } from "../i18n";
 import SpeakButton from "./SpeakButton";
 
 const navLinkClass = (active) =>
-  `rounded-lg px-3 py-2 text-sm font-medium transition ${
-    active ? "bg-teal-600 text-white" : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+  `rounded-xl px-3 py-2 text-sm font-semibold transition ${
+    active
+      ? "bg-gradient-to-r from-teal-600 to-cyan-600 text-white shadow-sm shadow-teal-700/25"
+      : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
   }`;
 
 function Brand() {
   const { t } = useTranslation();
 
   return (
-    <Link to="/" className="text-xl font-bold tracking-tight text-teal-600 transition hover:text-teal-700">
-      {t("nav.brand")}
+    <Link to="/" className="group inline-flex items-center gap-2 rounded-xl px-2 py-1 transition hover:bg-teal-50/70">
+      <span className="grid h-9 w-9 place-content-center rounded-xl bg-gradient-to-br from-teal-600 to-cyan-600 text-sm font-bold text-white shadow-sm shadow-teal-700/25">
+        SL
+      </span>
+      <span className="flex flex-col leading-tight">
+        <span className="text-base font-extrabold tracking-tight text-slate-900 transition group-hover:text-teal-700">
+          {t("nav.brand")}
+        </span>
+        <span className="text-xs font-medium text-slate-500">Scholarship companion</span>
+      </span>
     </Link>
+  );
+}
+
+function UtilityActions() {
+  return (
+    <div className="flex items-center gap-2">
+      <SpeakButton />
+      <LanguageSwitcher />
+      <AccessibilitySettings />
+    </div>
   );
 }
 
@@ -23,14 +43,12 @@ function PublicNav() {
   const { t } = useTranslation();
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur">
-      <div className="page-container flex h-16 items-center justify-between">
+    <header className="sticky top-0 z-50 border-b border-white/70 bg-white/80 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.5)] backdrop-blur-xl">
+      <div className="page-container flex items-center justify-between gap-3 py-3">
         <Brand />
         <nav className="flex items-center gap-2">
-          <SpeakButton />
-          <LanguageSwitcher />
-          <AccessibilitySettings />
-          <Link to="/login" className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">
+          <UtilityActions />
+          <Link to="/login" className="btn-ghost">
             {t("nav.login")}
           </Link>
           <Link to="/signup" className="btn-primary">
@@ -47,53 +65,49 @@ function UserNav({ links, baseLabel, onLogout }) {
   const { t } = useTranslation();
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur">
-      <div className="page-container flex h-16 items-center justify-between">
-        <Link to={links[0].to} className="text-xl font-bold tracking-tight text-teal-600">
-          {t("nav.brand")} <span className="text-slate-400 font-medium">{baseLabel}</span>
-        </Link>
-        <nav className="flex flex-wrap items-center gap-1">
-          <SpeakButton />
-          <LanguageSwitcher />
-          <AccessibilitySettings />
-          {links.map((item) => (
-            <Link
-              key={item.to}
-              to={item.to}
-              className={navLinkClass(location.pathname === item.to || location.pathname.startsWith(`${item.to}/`))}
+    <header className="sticky top-0 z-50 border-b border-white/70 bg-white/85 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.5)] backdrop-blur-xl">
+      <div className="page-container py-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="inline-flex items-center gap-3">
+            <Brand />
+            <span className="badge badge-neutral hidden sm:inline-flex">{baseLabel}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <UtilityActions />
+            <button
+              onClick={onLogout}
+              className="btn-ghost text-slate-600 hover:bg-red-50 hover:text-red-600"
             >
-              {item.label}
-            </Link>
-          ))}
-          <button
-            onClick={onLogout}
-            className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-red-50 hover:text-red-600"
-          >
-            {t("nav.logout")}
-          </button>
+              {t("nav.logout")}
+            </button>
+          </div>
+        </div>
+        <nav className="mt-3 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex min-w-max items-center gap-2 pb-1">
+            {links.map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                className={navLinkClass(location.pathname === item.to || location.pathname.startsWith(`${item.to}/`))}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
         </nav>
       </div>
     </header>
   );
 }
 
-export default function Navbar() {
-  const { user, logout } = useAuth();
+function RoleNav({ role, onLogout }) {
   const { t } = useTranslation();
-  const navigate = useNavigate();
 
-  if (!user) return <PublicNav />;
-
-  const handleLogout = () => {
-    logout();
-    navigate("/");
-  };
-
-  if (user.role === "STUDENT") {
+  if (role === "STUDENT") {
     return (
       <UserNav
         baseLabel={t("nav.studentLabel")}
-        onLogout={handleLogout}
+        onLogout={onLogout}
         links={[
           { to: "/student", label: t("nav.dashboard") },
           { to: "/student/profile", label: t("nav.profile") },
@@ -105,11 +119,11 @@ export default function Navbar() {
     );
   }
 
-  if (user.role === "ADMIN") {
+  if (role === "ADMIN") {
     return (
       <UserNav
         baseLabel={t("nav.adminLabel")}
-        onLogout={handleLogout}
+        onLogout={onLogout}
         links={[
           { to: "/admin", label: t("nav.overview") },
           { to: "/admin/students", label: t("nav.students") },
@@ -130,7 +144,7 @@ export default function Navbar() {
   return (
     <UserNav
       baseLabel={t("nav.moderatorLabel")}
-      onLogout={handleLogout}
+      onLogout={onLogout}
       links={[
         { to: "/moderator", label: t("nav.create") },
         { to: "/moderator/my-scholarships", label: t("nav.myScholarships") },
@@ -139,4 +153,18 @@ export default function Navbar() {
       ]}
     />
   );
+}
+
+export default function Navbar() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  if (!user) return <PublicNav />;
+
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
+
+  return <RoleNav role={user.role} onLogout={handleLogout} />;
 }

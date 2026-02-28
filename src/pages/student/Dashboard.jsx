@@ -519,21 +519,50 @@ export default function StudentDashboard() {
     }
   };
 
-  if (loading) return <div className="page-container"><div className="card text-center py-10">Loading...</div></div>;
+  if (loading) return <div className="page-container"><div className="card py-10 text-center">Loading...</div></div>;
 
   return (
     <div className="page-container space-y-6">
-      {error && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
-      {notice && <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{notice}</div>}
+      <section className="glass-strip p-4 sm:p-5">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="page-heading">Student Workspace</h1>
+            <p className="page-subheading">Manage profile, eligibility discovery, applications, and notifications from one dashboard.</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="badge badge-neutral">Profile: {dashboard?.profileCompletion || 0}%</span>
+            <span className="badge badge-success">Eligible: {dashboard?.metrics?.eligibleScholarships || 0}</span>
+            <span className="badge badge-warning">In progress: {dashboard?.metrics?.inProgressApplications || 0}</span>
+          </div>
+        </div>
+      </section>
+
+      {error && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+      {notice && <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{notice}</div>}
 
       {view === "DASHBOARD" && (
         <>
           <section className="grid gap-4 md:grid-cols-5">
-            <article className="card"><p className="text-sm text-slate-500">Profile</p><p className="mt-2 text-3xl font-bold text-teal-600">{dashboard?.profileCompletion || 0}%</p></article>
-            <article className="card"><p className="text-sm text-slate-500">Eligible</p><p className="mt-2 text-3xl font-bold text-teal-600">{dashboard?.metrics?.eligibleScholarships || 0}</p></article>
-            <article className="card"><p className="text-sm text-slate-500">Matching Mode</p><p className="mt-2 text-xl font-bold text-indigo-600">{dashboard?.matchingMode === "ELIGIBLE_ONLY" ? "Eligible Only" : "Complete Profile"}</p></article>
-            <article className="card"><p className="text-sm text-slate-500">In Progress</p><p className="mt-2 text-3xl font-bold text-amber-600">{dashboard?.metrics?.inProgressApplications || 0}</p></article>
-            <article className="card"><p className="text-sm text-slate-500">Approved</p><p className="mt-2 text-3xl font-bold text-emerald-600">{dashboard?.metrics?.approvedCount || 0}</p></article>
+            <article className="card border-teal-200/70 bg-gradient-to-br from-teal-50/70 to-white">
+              <p className="text-sm text-slate-500">Profile</p>
+              <p className="mt-2 text-3xl font-black text-teal-700">{dashboard?.profileCompletion || 0}%</p>
+            </article>
+            <article className="card border-cyan-200/70 bg-gradient-to-br from-cyan-50/70 to-white">
+              <p className="text-sm text-slate-500">Eligible</p>
+              <p className="mt-2 text-3xl font-black text-cyan-700">{dashboard?.metrics?.eligibleScholarships || 0}</p>
+            </article>
+            <article className="card border-indigo-200/70 bg-gradient-to-br from-indigo-50/70 to-white">
+              <p className="text-sm text-slate-500">Matching Mode</p>
+              <p className="mt-2 text-xl font-bold text-indigo-700">{dashboard?.matchingMode === "ELIGIBLE_ONLY" ? "Eligible Only" : "Complete Profile"}</p>
+            </article>
+            <article className="card border-amber-200/70 bg-gradient-to-br from-amber-50/70 to-white">
+              <p className="text-sm text-slate-500">In Progress</p>
+              <p className="mt-2 text-3xl font-black text-amber-700">{dashboard?.metrics?.inProgressApplications || 0}</p>
+            </article>
+            <article className="card border-emerald-200/70 bg-gradient-to-br from-emerald-50/70 to-white">
+              <p className="text-sm text-slate-500">Approved</p>
+              <p className="mt-2 text-3xl font-black text-emerald-700">{dashboard?.metrics?.approvedCount || 0}</p>
+            </article>
           </section>
 
           <section className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">

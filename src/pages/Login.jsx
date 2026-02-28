@@ -22,36 +22,45 @@ export default function Login() {
       if (currentUser.role === "STUDENT") navigate("/student");
       if (currentUser.role === "MODERATOR") navigate("/moderator");
       if (currentUser.role === "ADMIN") navigate("/admin");
-    } catch (error) {
-      setError(error.message || t("auth.invalidCredentials"));
+    } catch (currentError) {
+      setError(currentError.message || t("auth.invalidCredentials"));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-teal-50 px-4 py-12">
-      <div className="w-full max-w-md">
-        <div className="card border-0 shadow-xl">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-teal-600">{t("nav.brand")}</h1>
-            <p className="mt-1 text-sm text-slate-500">
-              {t("auth.verifiedPlatform")}
-            </p>
+    <div className="relative min-h-screen overflow-hidden px-4 py-10 sm:px-6 lg:px-8">
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_10%_15%,rgba(20,184,166,0.17),transparent_24%),radial-gradient(circle_at_88%_6%,rgba(250,204,21,0.16),transparent_18%)]" />
+      <div className="mx-auto grid w-full max-w-5xl gap-6 lg:grid-cols-12 lg:items-stretch">
+        <aside className="card hidden lg:col-span-5 lg:block lg:p-8">
+          <p className="inline-flex rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-teal-700">
+            Student-first platform
+          </p>
+          <h1 className="mt-4 text-3xl font-black tracking-tight text-slate-900">{t("nav.brand")}</h1>
+          <p className="mt-3 text-sm leading-relaxed text-slate-600">{t("auth.verifiedPlatform")}</p>
+          <ul className="mt-6 space-y-3 text-sm text-slate-700">
+            <li className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">Eligibility-first scholarship discovery</li>
+            <li className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">Profile and document reuse for faster applications</li>
+            <li className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">Track application roadmap with deadline alerts</li>
+          </ul>
+        </aside>
+
+        <div className="card lg:col-span-7 lg:p-8">
+          <div className="text-center lg:text-left">
+            <h2 className="text-2xl font-black tracking-tight text-slate-900">{t("nav.login")}</h2>
+            <p className="mt-1 text-sm text-slate-500">Access your dashboard and continue applications.</p>
           </div>
 
           {error && (
-            <div
-              role="alert"
-              className="mt-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700"
-            >
+            <div role="alert" className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
               {error}
             </div>
           )}
 
           <form onSubmit={submit} className="mt-6 space-y-5">
             <div>
-              <label htmlFor="login-email" className="mb-1.5 block text-sm font-medium text-slate-700">
+              <label htmlFor="login-email" className="mb-1.5 block text-sm font-semibold text-slate-700">
                 {t("auth.email")}
               </label>
               <input
@@ -66,7 +75,7 @@ export default function Login() {
               />
             </div>
             <div>
-              <label htmlFor="login-password" className="mb-1.5 block text-sm font-medium text-slate-700">
+              <label htmlFor="login-password" className="mb-1.5 block text-sm font-semibold text-slate-700">
                 {t("auth.password")}
               </label>
               <div className="relative">
@@ -74,7 +83,7 @@ export default function Login() {
                   id="login-password"
                   type={showPass ? "text" : "password"}
                   autoComplete="current-password"
-                  placeholder="••••••••"
+                  placeholder="Enter your password"
                   value={form.password}
                   onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
                   className="input-base pr-24"
@@ -83,35 +92,30 @@ export default function Login() {
                 <button
                   type="button"
                   onClick={() => setShowPass(!showPass)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-teal-600 hover:text-teal-700"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold uppercase tracking-wide text-teal-700 hover:text-teal-800"
                 >
                   {showPass ? t("auth.hide") : t("auth.show")}
                 </button>
               </div>
             </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-primary w-full py-3"
-            >
+            <button type="submit" disabled={loading} className="btn-primary w-full py-3">
               {loading ? t("auth.signingIn") : t("nav.login")}
             </button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-slate-500">
+          <p className="mt-6 text-center text-sm text-slate-500 lg:text-left">
             {t("auth.newStudent")}{" "}
             <button
               type="button"
               onClick={() => navigate("/signup")}
-              className="font-semibold text-teal-600 hover:text-teal-700 hover:underline"
+              className="font-semibold text-teal-700 hover:text-teal-800 hover:underline"
             >
               {t("auth.createAccount")}
             </button>
           </p>
+
+          <p className="mt-6 text-center text-xs text-slate-400 lg:text-left">{t("auth.usedBy")}</p>
         </div>
-        <p className="mt-6 text-center text-xs text-slate-400">
-          {t("auth.usedBy")}
-        </p>
       </div>
     </div>
   );
