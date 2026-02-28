@@ -545,7 +545,7 @@ export default function StudentDashboard() {
             <div className="mt-4 grid gap-3 lg:grid-cols-2">
               {(dashboard?.recommendedScholarships || []).map((item) => (
                 <article key={item.scholarship._id} className="rounded-xl border border-slate-200 p-4">
-                  <div className="flex items-center justify-between gap-2"><h3 className="font-semibold"><AutoText text={item.scholarship.title} /></h3><span className="badge badge-success">{item.score}% match</span></div>
+                  <div className="flex items-center justify-between gap-2"><h3 className="font-semibold" data-scholarship-title="true"><AutoText text={item.scholarship.title} /></h3><span className="badge badge-success">{item.score}% match</span></div>
                   <p className="mt-1 text-sm text-slate-600">{money(item.scholarship.amount)} | {new Date(item.scholarship.deadline).toLocaleDateString("en-IN")}</p>
                   <p className="mt-2 text-xs text-emerald-700">{item.passes.join(" | ")}</p>
                   <p className="mt-1 text-xs text-slate-600">Data completeness: {getCompleteness(item.scholarship)}%</p>
@@ -608,7 +608,7 @@ export default function StudentDashboard() {
             <div className="mt-4 grid gap-3 md:grid-cols-2">
               {discover.map((item) => (
                 <article key={item.scholarship._id} className="rounded-xl border border-slate-200 p-4">
-                  <h3 className="font-semibold"><AutoText text={item.scholarship.title} /></h3>
+                  <h3 className="font-semibold" data-scholarship-title="true"><AutoText text={item.scholarship.title} /></h3>
                   <p className="mt-1 text-sm text-slate-600">{money(item.scholarship.amount)}</p>
                   <div className="mt-2 flex items-center gap-2"><span className="badge badge-success">Eligible</span><span className="text-xs text-slate-500">{item.score}% match</span></div>
                   <p className="mt-1 text-xs text-slate-600">
@@ -812,7 +812,7 @@ export default function StudentDashboard() {
                 onClick={() => setActiveAppId(a._id)}
                 className={`mb-2 w-full rounded-lg border p-3 text-left ${activeApp?._id === a._id ? "border-teal-300 bg-teal-50" : "border-slate-200"}`}
               >
-                <p className="font-semibold"><AutoText text={a.scholarshipId?.title || ""} /></p>
+                <p className="font-semibold" data-scholarship-title="true"><AutoText text={a.scholarshipId?.title || ""} /></p>
                 <span className={`badge ${statusClass[a.status] || "badge-neutral"}`}>{a.status}</span>
                 <p className="mt-1 text-xs text-slate-500">{a.progressPercent}%</p>
               </button>
@@ -823,7 +823,7 @@ export default function StudentDashboard() {
             {activeApp && (
               <div className="space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h3 className="text-lg font-semibold"><AutoText text={activeApp.scholarshipId?.title || ""} /></h3>
+                  <h3 className="text-lg font-semibold" data-scholarship-title="true"><AutoText text={activeApp.scholarshipId?.title || ""} /></h3>
                   <div className="flex gap-2">
                     <button
                       onClick={() => finalSubmit(activeApp._id)}

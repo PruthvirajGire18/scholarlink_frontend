@@ -5,7 +5,14 @@ import LanguageSwitcher from "./LanguageSwitcher";
 
 export default function AccessibilitySettings() {
   const { t } = useTranslation();
-  const { voiceHintsEnabled, setVoiceHintsEnabled } = useAccessibility();
+  const {
+    voiceHintsEnabled,
+    setVoiceHintsEnabled,
+    accessibilityModeEnabled,
+    setAccessibilityModeEnabled,
+    speechRate,
+    setSpeechRate
+  } = useAccessibility();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -85,6 +92,43 @@ export default function AccessibilitySettings() {
                   }`}
                 />
               </button>
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <span className="block text-sm font-medium text-slate-700">
+                  Accessibility mode
+                </span>
+                <span className="block text-xs text-slate-500">
+                  Auto speak headings and scholarship titles
+                </span>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={accessibilityModeEnabled}
+                onClick={() => setAccessibilityModeEnabled(!accessibilityModeEnabled)}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600 ${
+                  accessibilityModeEnabled ? "bg-teal-600" : "bg-slate-200"
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition ${
+                    accessibilityModeEnabled ? "translate-x-5" : "translate-x-1"
+                  }`}
+                />
+              </button>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700">Speech rate</label>
+              <select
+                value={speechRate}
+                onChange={(event) => setSpeechRate(event.target.value)}
+                className="input-base mt-1"
+              >
+                <option value="slow">Slow</option>
+                <option value="normal">Normal</option>
+                <option value="fast">Fast</option>
+              </select>
             </div>
           </div>
         </div>

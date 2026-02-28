@@ -2,6 +2,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { AccessibilitySettings, LanguageSwitcher } from "./accessibility";
 import { useTranslation } from "../i18n";
+import SpeakButton from "./SpeakButton";
 
 const navLinkClass = (active) =>
   `rounded-lg px-3 py-2 text-sm font-medium transition ${
@@ -26,6 +27,7 @@ function PublicNav() {
       <div className="page-container flex h-16 items-center justify-between">
         <Brand />
         <nav className="flex items-center gap-2">
+          <SpeakButton />
           <LanguageSwitcher />
           <AccessibilitySettings />
           <Link to="/login" className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">
@@ -51,6 +53,7 @@ function UserNav({ links, baseLabel, onLogout }) {
           {t("nav.brand")} <span className="text-slate-400 font-medium">{baseLabel}</span>
         </Link>
         <nav className="flex flex-wrap items-center gap-1">
+          <SpeakButton />
           <LanguageSwitcher />
           <AccessibilitySettings />
           {links.map((item) => (

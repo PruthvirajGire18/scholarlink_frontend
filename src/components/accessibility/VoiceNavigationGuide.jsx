@@ -4,6 +4,7 @@ import { useAccessibility } from "../../contexts/AccessibilityContext";
 import { useTranslation } from "../../i18n";
 import { speakHint } from "../../utils/voiceHints";
 import useAutoTranslateText from "../../hooks/useAutoTranslateText";
+import useResolvedLanguage from "../../hooks/useResolvedLanguage";
 
 function resolveRouteHintKey(pathname) {
   if (!pathname || pathname === "/") return "home";
@@ -39,17 +40,18 @@ function resolveRouteHintKey(pathname) {
 export default function VoiceNavigationGuide() {
   const location = useLocation();
   const { voiceHintsEnabled } = useAccessibility();
-  const { lang, t } = useTranslation();
+  const { t } = useTranslation();
+  const { resolvedLanguage } = useResolvedLanguage();
   const routeKey = resolveRouteHintKey(location.pathname);
   const translationKey = `voiceHints.route.${routeKey}`;
   const templateHint = t(translationKey);
-  const autoTranslatedHint = useAutoTranslateText(templateHint);
+  const autoTranslatedHint = useAutoTranslateText(templateHint, { targetLang: resolvedLanguage });
 
   useEffect(() => {
     if (!voiceHintsEnabled) return;
     if (!templateHint || templateHint === translationKey) return;
-    speakHint(autoTranslatedHint || templateHint, lang);
-  }, [voiceHintsEnabled, templateHint, autoTranslatedHint, translationKey, lang]);
+    speakHint(autoTranslatedHint || templateHint, resolvedLanguage);
+  }, [voiceHintsEnabled, templateHint, autoTranslatedHint, translationKey, resolvedLanguage]);
 
   return null;
 }

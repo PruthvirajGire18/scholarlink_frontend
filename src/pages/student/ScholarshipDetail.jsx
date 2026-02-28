@@ -189,7 +189,7 @@ export default function ScholarshipDetail() {
 
       <div className="card">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <h1 className="flex-1 text-2xl font-bold text-slate-900"><AutoText text={scholarship.title} /></h1>
+          <h1 className="flex-1 text-2xl font-bold text-slate-900" data-scholarship-title="true"><AutoText text={scholarship.title} /></h1>
           <VoiceReader text={scholarship.title} className="shrink-0" />
         </div>
         <div className="mt-3 flex items-start gap-3">

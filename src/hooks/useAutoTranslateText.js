@@ -23,6 +23,7 @@ function isAlreadyInTargetScript(targetLang, text) {
 
 export default function useAutoTranslateText(text, options = {}) {
   const { lang } = useTranslation();
+  const targetLang = String(options.targetLang || lang || "en").trim().toLowerCase();
   const sourceLang = String(options.sourceLang || "auto").trim().toLowerCase();
   const originalText = useMemo(() => normalizeText(text), [text]);
   const [translatedText, setTranslatedText] = useState(originalText);
@@ -36,13 +37,13 @@ export default function useAutoTranslateText(text, options = {}) {
         return;
       }
 
-      const sameLanguage = sourceLang !== "auto" && lang === sourceLang;
-      if (sameLanguage || isAlreadyInTargetScript(lang, originalText)) {
+      const sameLanguage = sourceLang !== "auto" && targetLang === sourceLang;
+      if (sameLanguage || isAlreadyInTargetScript(targetLang, originalText)) {
         if (active) setTranslatedText(originalText);
         return;
       }
 
-      const key = buildKey(sourceLang, lang, originalText);
+      const key = buildKey(sourceLang, targetLang, originalText);
       if (cache.has(key)) {
         if (active) setTranslatedText(cache.get(key));
         return;
@@ -53,7 +54,7 @@ export default function useAutoTranslateText(text, options = {}) {
       try {
         const response = await requestTranslations({
           texts: [originalText],
-          targetLang: lang,
+          targetLang,
           sourceLang
         });
         const resolved = response.translations?.[originalText] || originalText;
@@ -68,7 +69,7 @@ export default function useAutoTranslateText(text, options = {}) {
     return () => {
       active = false;
     };
-  }, [originalText, lang, sourceLang]);
+  }, [originalText, targetLang, sourceLang]);
 
   return translatedText || originalText;
 }

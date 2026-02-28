@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useTranslation } from "../../i18n";
 import { requestTranslations } from "../../services/i18nService";
+import useResolvedLanguage from "../../hooks/useResolvedLanguage";
 
 const SKIP_TAGS = new Set([
   "SCRIPT",
@@ -54,6 +55,7 @@ function chunkArray(values, chunkSize) {
 
 export default function AutoPageTranslator() {
   const { lang } = useTranslation();
+  const { resolvedLanguage } = useResolvedLanguage();
   const originalTextByNodeRef = useRef(new WeakMap());
   const trackedNodesRef = useRef(new Set());
   const translatedCacheRef = useRef(new Map());
@@ -115,7 +117,7 @@ export default function AutoPageTranslator() {
     const processTranslation = async () => {
       const textNodeMap = collectNodes();
 
-      if (lang === "en") {
+      if (resolvedLanguage === "en") {
         isApplyingRef.current = true;
         restoreOriginals();
         isApplyingRef.current = false;
@@ -124,8 +126,8 @@ export default function AutoPageTranslator() {
 
       const texts = [...textNodeMap.keys()];
       const needFetch = texts.filter((text) => {
-        if (isAlreadyInTargetScript(lang, text)) return false;
-        return !translatedCacheRef.current.has(`${lang}::${text}`);
+        if (isAlreadyInTargetScript(resolvedLanguage, text)) return false;
+        return !translatedCacheRef.current.has(`${resolvedLanguage}::${text}`);
       });
 
       if (needFetch.length > 0) {
@@ -135,15 +137,15 @@ export default function AutoPageTranslator() {
             const response = await requestTranslations({
               texts: chunk,
               sourceLang: "auto",
-              targetLang: lang
+              targetLang: resolvedLanguage
             });
             chunk.forEach((text) => {
               const translated = response.translations?.[text] || text;
-              translatedCacheRef.current.set(`${lang}::${text}`, translated);
+              translatedCacheRef.current.set(`${resolvedLanguage}::${text}`, translated);
             });
           } catch {
             chunk.forEach((text) => {
-              translatedCacheRef.current.set(`${lang}::${text}`, text);
+              translatedCacheRef.current.set(`${resolvedLanguage}::${text}`, text);
             });
           }
         }
@@ -151,9 +153,9 @@ export default function AutoPageTranslator() {
 
       isApplyingRef.current = true;
       textNodeMap.forEach((items, normalizedText) => {
-        const translatedCore = isAlreadyInTargetScript(lang, normalizedText)
+        const translatedCore = isAlreadyInTargetScript(resolvedLanguage, normalizedText)
           ? normalizedText
-          : translatedCacheRef.current.get(`${lang}::${normalizedText}`) || normalizedText;
+          : translatedCacheRef.current.get(`${resolvedLanguage}::${normalizedText}`) || normalizedText;
 
         items.forEach(({ node, originalRaw }) => {
           if (!node?.isConnected) return;
@@ -191,7 +193,7 @@ export default function AutoPageTranslator() {
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [lang]);
+  }, [lang, resolvedLanguage]);
 
   return null;
 }

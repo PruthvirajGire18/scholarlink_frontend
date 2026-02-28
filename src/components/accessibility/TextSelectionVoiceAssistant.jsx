@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { useTranslation } from "../../i18n";
-import { requestTranslations } from "../../services/i18nService";
-import { speakHint } from "../../utils/voiceHints";
+import useResolvedLanguage from "../../hooks/useResolvedLanguage";
+import { translateText } from "../../services/i18nService";
+import { resolveTranslatedText, speakText } from "../../utils/speech";
+import { useAccessibility } from "../../contexts/AccessibilityContext";
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
@@ -23,7 +24,8 @@ function getSelectionPayload() {
 }
 
 export default function TextSelectionVoiceAssistant() {
-  const { lang } = useTranslation();
+  const { resolvedLanguage } = useResolvedLanguage();
+  const { speechRate } = useAccessibility();
   const [selectedText, setSelectedText] = useState("");
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [visible, setVisible] = useState(false);
@@ -95,17 +97,20 @@ export default function TextSelectionVoiceAssistant() {
 
     setIsSpeaking(true);
     try {
-      const response = await requestTranslations({
-        texts: [selectedText],
-        sourceLang: "auto",
-        targetLang: lang
+      const translated = await resolveTranslatedText({
+        text: selectedText,
+        targetLang: resolvedLanguage,
+        translator: async (text, targetLang) => translateText({ text, targetLang })
       });
-      const translated = response.translations?.[selectedText] || selectedText;
       setPreviewText(translated);
-      speakHint(translated, lang, { force: true });
+      speakText(translated, resolvedLanguage, {
+        rate: speechRate === "slow" ? 0.85 : speechRate === "fast" ? 1.2 : 1
+      });
     } catch {
       setPreviewText(selectedText);
-      speakHint(selectedText, lang, { force: true });
+      speakText(selectedText, resolvedLanguage, {
+        rate: speechRate === "slow" ? 0.85 : speechRate === "fast" ? 1.2 : 1
+      });
     } finally {
       setIsSpeaking(false);
     }

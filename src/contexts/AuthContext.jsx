@@ -40,9 +40,13 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     const lang = localStorage.getItem("app_lang");
     const voiceHints = localStorage.getItem("app_voice_hints");
+    const accessibilityMode = localStorage.getItem("app_accessibility_mode");
+    const speechRate = localStorage.getItem("app_speech_rate");
     localStorage.clear();
     if (lang) localStorage.setItem("app_lang", lang);
     if (voiceHints) localStorage.setItem("app_voice_hints", voiceHints);
+    if (accessibilityMode) localStorage.setItem("app_accessibility_mode", accessibilityMode);
+    if (speechRate) localStorage.setItem("app_speech_rate", speechRate);
     setUser(null);
   };
 

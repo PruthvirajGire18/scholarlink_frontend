@@ -2,17 +2,21 @@ import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "../../i18n";
 import { langToSpeechCode } from "../../i18n/languages";
 import useAutoTranslateText from "../../hooks/useAutoTranslateText";
+import useResolvedLanguage from "../../hooks/useResolvedLanguage";
+import { useAccessibility } from "../../contexts/AccessibilityContext";
 
 const hasSpeech = typeof window !== "undefined" && "speechSynthesis" in window;
 
 export default function VoiceReader({ text, label, className = "" }) {
-  const { t, lang } = useTranslation();
+  const { t } = useTranslation();
+  const { resolvedLanguage } = useResolvedLanguage();
+  const { speechRate } = useAccessibility();
   const [status, setStatus] = useState("idle"); // idle | playing | paused
   const utteranceRef = useRef(null);
   const synthRef = useRef(null);
-  const speechText = useAutoTranslateText(text);
+  const speechText = useAutoTranslateText(text, { targetLang: resolvedLanguage });
 
-  const speechLang = langToSpeechCode[lang] || "en-IN";
+  const speechLang = langToSpeechCode[resolvedLanguage] || "en-IN";
 
   useEffect(() => {
     if (!hasSpeech) return;
@@ -33,7 +37,7 @@ export default function VoiceReader({ text, label, className = "" }) {
     s.cancel();
     const u = new SpeechSynthesisUtterance(speechText.trim());
     u.lang = speechLang;
-    u.rate = 0.95;
+    u.rate = speechRate === "slow" ? 0.85 : speechRate === "fast" ? 1.2 : 0.95;
     u.onstart = () => setStatus("playing");
     u.onend = () => setStatus("idle");
     u.onerror = () => setStatus("idle");
