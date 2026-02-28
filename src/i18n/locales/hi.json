@@ -17,7 +17,15 @@
     "dashboard": "डैशबोर्ड",
     "myScholarships": "मेरी छात्रवृत्ति",
     "assistance": "सहायता",
-    "applications": "आवेदन"
+    "applications": "आवेदन",
+    "studentLabel": "छात्र",
+    "profile": "प्रोफाइल",
+    "notifications": "सूचनाएं",
+    "help": "सहायता",
+    "students": "छात्र",
+    "insights": "इनसाइट्स",
+    "ingestion": "इंजेस्टन",
+    "create": "बनाएं"
   },
   "home": {
     "tagline": "छात्रवृत्ति मिलान प्लेटफ़ॉर्म",
@@ -100,6 +108,32 @@
     "viewingApproved": "आप स्वीकृत छात्रवृत्ति देख रहे हैं",
     "clickForDetails": "विवरण देखने के लिए यहां क्लिक करें",
     "scrollEligibility": "पात्रता मानदंड के लिए नीचे स्क्रॉल करें",
-    "viewingScholarship": "आप छात्रवृत्ति विवरण देख रहे हैं"
+    "viewingScholarship": "आप छात्रवृत्ति विवरण देख रहे हैं",
+    "route": {
+      "home": "पेज खुल गया है।",
+      "login": "पेज खुल गया है।",
+      "signup": "पेज खुल गया है।",
+      "studentDashboard": "पेज खुल गया है।",
+      "studentProfile": "पेज खुल गया है।",
+      "studentApplications": "पेज खुल गया है।",
+      "studentNotifications": "पेज खुल गया है।",
+      "studentScholarshipDetail": "पेज खुल गया है।",
+      "studentAssistance": "पेज खुल गया है।",
+      "moderatorCreate": "पेज खुल गया है।",
+      "moderatorScholarships": "पेज खुल गया है।",
+      "moderatorAssistance": "पेज खुल गया है।",
+      "moderatorApplications": "पेज खुल गया है।",
+      "adminOverview": "पेज खुल गया है।",
+      "adminStudents": "पेज खुल गया है।",
+      "adminScholarships": "पेज खुल गया है।",
+      "adminApplications": "पेज खुल गया है।",
+      "adminDocuments": "पेज खुल गया है।",
+      "adminModerators": "पेज खुल गया है।",
+      "adminVerification": "पेज खुल गया है।",
+      "adminIngestion": "पेज खुल गया है।",
+      "adminAudit": "पेज खुल गया है।",
+      "adminFraud": "पेज खुल गया है।",
+      "generic": "पेज खुल गया है।"
+    }
   }
 }

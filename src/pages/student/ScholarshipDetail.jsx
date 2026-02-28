@@ -11,6 +11,7 @@ import { useTranslation } from "../../i18n";
 import { useAccessibility } from "../../contexts/AccessibilityContext";
 import { speakHint } from "../../utils/voiceHints";
 import { VoiceReader } from "../../components/accessibility";
+import AutoText from "../../components/i18n/AutoText";
 
 function buildEligibilityText(s) {
   if (!s?.eligibility) return "";
@@ -188,11 +189,11 @@ export default function ScholarshipDetail() {
 
       <div className="card">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <h1 className="flex-1 text-2xl font-bold text-slate-900">{scholarship.title}</h1>
+          <h1 className="flex-1 text-2xl font-bold text-slate-900"><AutoText text={scholarship.title} /></h1>
           <VoiceReader text={scholarship.title} className="shrink-0" />
         </div>
         <div className="mt-3 flex items-start gap-3">
-          <p className="flex-1 text-slate-600 leading-relaxed">{scholarship.description}</p>
+          <p className="flex-1 text-slate-600 leading-relaxed"><AutoText text={scholarship.description} /></p>
           <VoiceReader text={scholarship.description} className="shrink-0" />
         </div>
         <dl className="mt-6 grid gap-2 sm:grid-cols-2">
@@ -208,21 +209,21 @@ export default function ScholarshipDetail() {
           {scholarship.provider?.name && (
             <div>
               <dt className="text-sm font-medium text-slate-500">{t("student.provider")}</dt>
-              <dd>{scholarship.provider.name}</dd>
+              <dd><AutoText text={scholarship.provider.name} /></dd>
             </div>
           )}
         </dl>
         {eligibilityText && (
           <div className="mt-4 border-t border-slate-200 pt-4">
             <dt className="text-sm font-medium text-slate-500">{t("student.eligibility")}</dt>
-            <dd className="mt-1 text-slate-700">{eligibilityText}</dd>
+            <dd className="mt-1 text-slate-700"><AutoText text={eligibilityText} /></dd>
             <VoiceReader text={`${t("student.eligibility")}: ${eligibilityText}`} className="mt-2" />
           </div>
         )}
         {scholarship.benefits && (
           <div className="mt-4 border-t border-slate-200 pt-4">
             <dt className="text-sm font-medium text-slate-500">{t("student.benefits")}</dt>
-            <dd className="mt-1 text-slate-700">{scholarship.benefits}</dd>
+            <dd className="mt-1 text-slate-700"><AutoText text={scholarship.benefits} /></dd>
             <VoiceReader text={`${t("student.importantNotice")}: ${scholarship.benefits}`} className="mt-2" />
           </div>
         )}
@@ -236,7 +237,7 @@ export default function ScholarshipDetail() {
           </div>
           {missingFields.length > 0 ? (
             <p className="mt-2 text-sm text-amber-700">
-              Missing data: {missingFields.join(" | ")}
+              Missing data: <AutoText text={missingFields.join(" | ")} />
             </p>
           ) : (
             <p className="mt-2 text-sm text-emerald-700">No critical data fields are missing.</p>
@@ -265,14 +266,14 @@ export default function ScholarshipDetail() {
             <div className="rounded-lg border border-slate-200 p-3">
               <p className="text-sm font-semibold text-slate-900">Required documents</p>
               <ul className="mt-2 space-y-1 text-sm text-slate-700">
-                {(scholarship.documentsRequired || []).map((doc) => <li key={doc}>- {doc}</li>)}
+                {(scholarship.documentsRequired || []).map((doc) => <li key={doc}>- <AutoText text={doc} /></li>)}
                 {(scholarship.documentsRequired || []).length === 0 && <li>No document list provided.</li>}
               </ul>
             </div>
             <div className="rounded-lg border border-slate-200 p-3">
               <p className="text-sm font-semibold text-slate-900">Step-by-step instructions</p>
               <ol className="mt-2 space-y-1 text-sm text-slate-700">
-                {(scholarship.applicationProcess?.steps || []).map((step, idx) => <li key={`${step}-${idx}`}>{idx + 1}. {step}</li>)}
+                {(scholarship.applicationProcess?.steps || []).map((step, idx) => <li key={`${step}-${idx}`}>{idx + 1}. <AutoText text={step} /></li>)}
                 {(scholarship.applicationProcess?.steps || []).length === 0 && <li>No steps added yet.</li>}
               </ol>
             </div>
@@ -280,12 +281,12 @@ export default function ScholarshipDetail() {
           <div className="mt-3 rounded-lg border border-slate-200 p-3">
             <p className="text-sm font-semibold text-slate-900">Common mistakes</p>
             <ul className="mt-2 space-y-1 text-sm text-slate-700">
-              {(scholarship.commonMistakes || []).map((mistake, idx) => <li key={`${mistake}-${idx}`}>- {mistake}</li>)}
+              {(scholarship.commonMistakes || []).map((mistake, idx) => <li key={`${mistake}-${idx}`}>- <AutoText text={mistake} /></li>)}
               {(scholarship.commonMistakes || []).length === 0 && <li>No common mistakes listed.</li>}
             </ul>
           </div>
           <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            {scholarship.disclaimer || "Final submission and verification happens on official portals only."}
+            <AutoText text={scholarship.disclaimer || "Final submission and verification happens on official portals only."} />
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
             <button disabled={starting} onClick={handleStartApplication} className="btn-primary">

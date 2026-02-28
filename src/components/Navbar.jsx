@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { AccessibilitySettings, LanguageSwitcher } from "./accessibility";
+import { useTranslation } from "../i18n";
 
 const navLinkClass = (active) =>
   `rounded-lg px-3 py-2 text-sm font-medium transition ${
@@ -8,14 +9,18 @@ const navLinkClass = (active) =>
   }`;
 
 function Brand() {
+  const { t } = useTranslation();
+
   return (
     <Link to="/" className="text-xl font-bold tracking-tight text-teal-600 transition hover:text-teal-700">
-      ScholarLink
+      {t("nav.brand")}
     </Link>
   );
 }
 
 function PublicNav() {
+  const { t } = useTranslation();
+
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur">
       <div className="page-container flex h-16 items-center justify-between">
@@ -24,10 +29,10 @@ function PublicNav() {
           <LanguageSwitcher />
           <AccessibilitySettings />
           <Link to="/login" className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">
-            Log in
+            {t("nav.login")}
           </Link>
           <Link to="/signup" className="btn-primary">
-            Sign up
+            {t("nav.signup")}
           </Link>
         </nav>
       </div>
@@ -37,12 +42,13 @@ function PublicNav() {
 
 function UserNav({ links, baseLabel, onLogout }) {
   const location = useLocation();
+  const { t } = useTranslation();
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur">
       <div className="page-container flex h-16 items-center justify-between">
         <Link to={links[0].to} className="text-xl font-bold tracking-tight text-teal-600">
-          ScholarLink <span className="text-slate-400 font-medium">{baseLabel}</span>
+          {t("nav.brand")} <span className="text-slate-400 font-medium">{baseLabel}</span>
         </Link>
         <nav className="flex flex-wrap items-center gap-1">
           <LanguageSwitcher />
@@ -60,7 +66,7 @@ function UserNav({ links, baseLabel, onLogout }) {
             onClick={onLogout}
             className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-red-50 hover:text-red-600"
           >
-            Log out
+            {t("nav.logout")}
           </button>
         </nav>
       </div>
@@ -70,6 +76,7 @@ function UserNav({ links, baseLabel, onLogout }) {
 
 export default function Navbar() {
   const { user, logout } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   if (!user) return <PublicNav />;
@@ -82,14 +89,14 @@ export default function Navbar() {
   if (user.role === "STUDENT") {
     return (
       <UserNav
-        baseLabel="Student"
+        baseLabel={t("nav.studentLabel")}
         onLogout={handleLogout}
         links={[
-          { to: "/student", label: "Dashboard" },
-          { to: "/student/profile", label: "Profile" },
-          { to: "/student/applications", label: "Applications" },
-          { to: "/student/notifications", label: "Notifications" },
-          { to: "/student/assistance", label: "Help" }
+          { to: "/student", label: t("nav.dashboard") },
+          { to: "/student/profile", label: t("nav.profile") },
+          { to: "/student/applications", label: t("nav.applications") },
+          { to: "/student/notifications", label: t("nav.notifications") },
+          { to: "/student/assistance", label: t("nav.help") }
         ]}
       />
     );
@@ -98,20 +105,20 @@ export default function Navbar() {
   if (user.role === "ADMIN") {
     return (
       <UserNav
-        baseLabel="Admin"
+        baseLabel={t("nav.adminLabel")}
         onLogout={handleLogout}
         links={[
-          { to: "/admin", label: "Overview" },
-          { to: "/admin/students", label: "Students" },
-          { to: "/admin/scholarships", label: "Scholarships" },
-          { to: "/admin/applications", label: "Applications" },
-          { to: "/admin/documents", label: "Documents" },
-          { to: "/admin/insights", label: "Insights" },
-          { to: "/admin/moderators", label: "Moderators" },
-          { to: "/admin/verification", label: "Verification" },
-          { to: "/admin/ingestion", label: "Ingestion" },
-          { to: "/admin/audit", label: "Audit" },
-          { to: "/admin/fraud", label: "Fraud" }
+          { to: "/admin", label: t("nav.overview") },
+          { to: "/admin/students", label: t("nav.students") },
+          { to: "/admin/scholarships", label: t("nav.scholarships") },
+          { to: "/admin/applications", label: t("nav.applications") },
+          { to: "/admin/documents", label: t("nav.documents") },
+          { to: "/admin/insights", label: t("nav.insights") },
+          { to: "/admin/moderators", label: t("nav.moderators") },
+          { to: "/admin/verification", label: t("nav.verification") },
+          { to: "/admin/ingestion", label: t("nav.ingestion") },
+          { to: "/admin/audit", label: t("nav.audit") },
+          { to: "/admin/fraud", label: t("nav.fraud") }
         ]}
       />
     );
@@ -119,13 +126,13 @@ export default function Navbar() {
 
   return (
     <UserNav
-      baseLabel="Moderator"
+      baseLabel={t("nav.moderatorLabel")}
       onLogout={handleLogout}
       links={[
-        { to: "/moderator", label: "Create" },
-        { to: "/moderator/my-scholarships", label: "My Scholarships" },
-        { to: "/moderator/assistance", label: "Assistance" },
-        { to: "/moderator/applications", label: "Applications" }
+        { to: "/moderator", label: t("nav.create") },
+        { to: "/moderator/my-scholarships", label: t("nav.myScholarships") },
+        { to: "/moderator/assistance", label: t("nav.assistance") },
+        { to: "/moderator/applications", label: t("nav.applications") }
       ]}
     />
   );

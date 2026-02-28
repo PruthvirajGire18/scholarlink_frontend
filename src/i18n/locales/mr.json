@@ -17,7 +17,15 @@
     "dashboard": "डॅशबोर्ड",
     "myScholarships": "माझ्या शिष्यवृत्ती",
     "assistance": "मदत",
-    "applications": "अर्ज"
+    "applications": "अर्ज",
+    "studentLabel": "विद्यार्थी",
+    "profile": "प्रोफाइल",
+    "notifications": "सूचना",
+    "help": "मदत",
+    "students": "विद्यार्थी",
+    "insights": "इनसाइट्स",
+    "ingestion": "इंजेशन",
+    "create": "तयार करा"
   },
   "home": {
     "tagline": "शिष्यवृत्ती जुळवणी प्लॅटफॉर्म",
@@ -100,6 +108,32 @@
     "viewingApproved": "तुम्ही मंजूर शिष्यवृत्ती पाहत आहात",
     "clickForDetails": "तपशील पाहण्यासाठी येथे क्लिक करा",
     "scrollEligibility": "पात्रता निकषांसाठी खाली स्क्रोल करा",
-    "viewingScholarship": "तुम्ही शिष्यवृत्ती तपशील पाहत आहात"
+    "viewingScholarship": "तुम्ही शिष्यवृत्ती तपशील पाहत आहात",
+    "route": {
+      "home": "पेज उघडले आहे।",
+      "login": "पेज उघडले आहे।",
+      "signup": "पेज उघडले आहे।",
+      "studentDashboard": "पेज उघडले आहे।",
+      "studentProfile": "पेज उघडले आहे।",
+      "studentApplications": "पेज उघडले आहे।",
+      "studentNotifications": "पेज उघडले आहे।",
+      "studentScholarshipDetail": "पेज उघडले आहे।",
+      "studentAssistance": "पेज उघडले आहे।",
+      "moderatorCreate": "पेज उघडले आहे।",
+      "moderatorScholarships": "पेज उघडले आहे।",
+      "moderatorAssistance": "पेज उघडले आहे।",
+      "moderatorApplications": "पेज उघडले आहे।",
+      "adminOverview": "पेज उघडले आहे।",
+      "adminStudents": "पेज उघडले आहे।",
+      "adminScholarships": "पेज उघडले आहे।",
+      "adminApplications": "पेज उघडले आहे।",
+      "adminDocuments": "पेज उघडले आहे।",
+      "adminModerators": "पेज उघडले आहे।",
+      "adminVerification": "पेज उघडले आहे।",
+      "adminIngestion": "पेज उघडले आहे।",
+      "adminAudit": "पेज उघडले आहे।",
+      "adminFraud": "पेज उघडले आहे।",
+      "generic": "पेज उघडले आहे।"
+    }
   }
 }

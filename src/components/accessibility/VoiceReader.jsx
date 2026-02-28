@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "../../i18n";
 import { langToSpeechCode } from "../../i18n/languages";
+import useAutoTranslateText from "../../hooks/useAutoTranslateText";
 
 const hasSpeech = typeof window !== "undefined" && "speechSynthesis" in window;
 
@@ -9,6 +10,7 @@ export default function VoiceReader({ text, label, className = "" }) {
   const [status, setStatus] = useState("idle"); // idle | playing | paused
   const utteranceRef = useRef(null);
   const synthRef = useRef(null);
+  const speechText = useAutoTranslateText(text);
 
   const speechLang = langToSpeechCode[lang] || "en-IN";
 
@@ -25,11 +27,11 @@ export default function VoiceReader({ text, label, className = "" }) {
   }, []);
 
   const play = () => {
-    if (!hasSpeech || !text || typeof text !== "string") return;
+    if (!hasSpeech || !speechText || typeof speechText !== "string") return;
     const s = synthRef.current;
     if (!s) return;
     s.cancel();
-    const u = new SpeechSynthesisUtterance(text.trim());
+    const u = new SpeechSynthesisUtterance(speechText.trim());
     u.lang = speechLang;
     u.rate = 0.95;
     u.onstart = () => setStatus("playing");

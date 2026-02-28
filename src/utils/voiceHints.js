@@ -5,10 +5,11 @@ const hasSpeech = typeof window !== "undefined" && "speechSynthesis" in window;
 let lastHintTime = 0;
 const THROTTLE_MS = 2000;
 
-export function speakHint(text, langCode = "en") {
+export function speakHint(text, langCode = "en", options = {}) {
   if (!hasSpeech || !text) return;
+  const force = options?.force === true;
   const now = Date.now();
-  if (now - lastHintTime < THROTTLE_MS) return;
+  if (!force && now - lastHintTime < THROTTLE_MS) return;
   lastHintTime = now;
   window.speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(String(text).trim());

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useMemo } from "react";
+import { createContext, useContext, useState, useCallback, useMemo, useEffect } from "react";
 import en from "./locales/en.json";
 import hi from "./locales/hi.json";
 import mr from "./locales/mr.json";
@@ -58,6 +58,12 @@ export function LanguageProvider({ children }) {
     }),
     [lang, setLanguage, t]
   );
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    document.documentElement.lang = lang;
+    document.documentElement.dir = "ltr";
+  }, [lang]);
 
   return (
     <LanguageContext.Provider value={value}>

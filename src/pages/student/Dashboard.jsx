@@ -16,6 +16,7 @@ import {
   uploadApplicationDocument,
   uploadProfileDocument
 } from "../../services/studentService";
+import AutoText from "../../components/i18n/AutoText";
 
 const CATEGORY_OPTIONS = ["OPEN", "OBC", "SC", "ST", "VJNT", "EWS", "SEBC"];
 const EDUCATION_LEVEL_OPTIONS = ["DIPLOMA", "UG", "PG", "PHD"];
@@ -536,7 +537,7 @@ export default function StudentDashboard() {
           </section>
 
           <section className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            {dashboard?.portalDisclaimer || "Final submission and verification happens on official portals only."}
+            <AutoText text={dashboard?.portalDisclaimer || "Final submission and verification happens on official portals only."} />
           </section>
 
           <section className="card">
@@ -544,7 +545,7 @@ export default function StudentDashboard() {
             <div className="mt-4 grid gap-3 lg:grid-cols-2">
               {(dashboard?.recommendedScholarships || []).map((item) => (
                 <article key={item.scholarship._id} className="rounded-xl border border-slate-200 p-4">
-                  <div className="flex items-center justify-between gap-2"><h3 className="font-semibold">{item.scholarship.title}</h3><span className="badge badge-success">{item.score}% match</span></div>
+                  <div className="flex items-center justify-between gap-2"><h3 className="font-semibold"><AutoText text={item.scholarship.title} /></h3><span className="badge badge-success">{item.score}% match</span></div>
                   <p className="mt-1 text-sm text-slate-600">{money(item.scholarship.amount)} | {new Date(item.scholarship.deadline).toLocaleDateString("en-IN")}</p>
                   <p className="mt-2 text-xs text-emerald-700">{item.passes.join(" | ")}</p>
                   <p className="mt-1 text-xs text-slate-600">Data completeness: {getCompleteness(item.scholarship)}%</p>
@@ -607,7 +608,7 @@ export default function StudentDashboard() {
             <div className="mt-4 grid gap-3 md:grid-cols-2">
               {discover.map((item) => (
                 <article key={item.scholarship._id} className="rounded-xl border border-slate-200 p-4">
-                  <h3 className="font-semibold">{item.scholarship.title}</h3>
+                  <h3 className="font-semibold"><AutoText text={item.scholarship.title} /></h3>
                   <p className="mt-1 text-sm text-slate-600">{money(item.scholarship.amount)}</p>
                   <div className="mt-2 flex items-center gap-2"><span className="badge badge-success">Eligible</span><span className="text-xs text-slate-500">{item.score}% match</span></div>
                   <p className="mt-1 text-xs text-slate-600">
@@ -811,7 +812,7 @@ export default function StudentDashboard() {
                 onClick={() => setActiveAppId(a._id)}
                 className={`mb-2 w-full rounded-lg border p-3 text-left ${activeApp?._id === a._id ? "border-teal-300 bg-teal-50" : "border-slate-200"}`}
               >
-                <p className="font-semibold">{a.scholarshipId?.title}</p>
+                <p className="font-semibold"><AutoText text={a.scholarshipId?.title || ""} /></p>
                 <span className={`badge ${statusClass[a.status] || "badge-neutral"}`}>{a.status}</span>
                 <p className="mt-1 text-xs text-slate-500">{a.progressPercent}%</p>
               </button>
@@ -822,7 +823,7 @@ export default function StudentDashboard() {
             {activeApp && (
               <div className="space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h3 className="text-lg font-semibold">{activeApp.scholarshipId?.title}</h3>
+                  <h3 className="text-lg font-semibold"><AutoText text={activeApp.scholarshipId?.title || ""} /></h3>
                   <div className="flex gap-2">
                     <button
                       onClick={() => finalSubmit(activeApp._id)}
@@ -848,13 +849,13 @@ export default function StudentDashboard() {
                 )}
 
                 <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                  Final submission and verification happens on official government/NGO portals only.
+                  <AutoText text="Final submission and verification happens on official government/NGO portals only." />
                 </div>
 
                 <div className="rounded-lg border border-slate-200 p-4">
                   <h4 className="text-base font-semibold text-slate-900">Scholarship Details (Same as View Details)</h4>
                   <p className="mt-2 text-sm text-slate-700">
-                    {activeApp.scholarshipId?.description || "Description not available."}
+                    <AutoText text={activeApp.scholarshipId?.description || "Description not available."} />
                   </p>
                   <div className="mt-3 grid gap-3 md:grid-cols-2">
                     <div className="rounded-lg border border-slate-200 p-3">
@@ -874,7 +875,7 @@ export default function StudentDashboard() {
                     <div className="rounded-lg border border-slate-200 p-3">
                       <p className="text-xs text-slate-500">Provider</p>
                       <p className="text-sm font-semibold text-slate-900">
-                        {activeApp.scholarshipId?.provider?.name || "-"}
+                        {activeApp.scholarshipId?.provider?.name ? <AutoText text={activeApp.scholarshipId.provider.name} /> : "-"}
                       </p>
                     </div>
                     <div className="rounded-lg border border-slate-200 p-3">
@@ -887,13 +888,13 @@ export default function StudentDashboard() {
                   {activeEligibilityText && (
                     <div className="mt-3 rounded-lg border border-slate-200 p-3">
                       <p className="text-xs text-slate-500">Eligibility</p>
-                      <p className="mt-1 text-sm text-slate-700">{activeEligibilityText}</p>
+                      <p className="mt-1 text-sm text-slate-700"><AutoText text={activeEligibilityText} /></p>
                     </div>
                   )}
                   {activeApp.scholarshipId?.benefits && (
                     <div className="mt-3 rounded-lg border border-slate-200 p-3">
                       <p className="text-xs text-slate-500">Benefits</p>
-                      <p className="mt-1 text-sm text-slate-700">{activeApp.scholarshipId.benefits}</p>
+                      <p className="mt-1 text-sm text-slate-700"><AutoText text={activeApp.scholarshipId.benefits} /></p>
                     </div>
                   )}
                 </div>
@@ -918,7 +919,7 @@ export default function StudentDashboard() {
                     <p className="text-xs text-slate-500">Common mistakes</p>
                     <ul className="mt-2 space-y-1 text-sm text-slate-700">
                       {(activeApp.scholarshipId?.commonMistakes || []).map((m, idx) => (
-                        <li key={`${m}-${idx}`}>- {m}</li>
+                        <li key={`${m}-${idx}`}>- <AutoText text={m} /></li>
                       ))}
                       {(activeApp.scholarshipId?.commonMistakes || []).length === 0 && (
                         <li>No common mistake notes available.</li>
@@ -934,13 +935,13 @@ export default function StudentDashboard() {
                     {(activeApp.roadmapSteps || []).map((s) => (
                       <label key={s.key} className="mb-2 flex items-start gap-2 rounded-lg border border-slate-200 p-2">
                         <input type="checkbox" checked={!!s.isDone} disabled={busy || ["documents", "submit"].includes(s.key)} onChange={(e) => toggleStep(activeApp._id, s.key, e.target.checked)} />
-                        <span><b>{s.title}</b><br /><small className="text-slate-500">{s.description}</small></span>
+                        <span><b><AutoText text={s.title} /></b><br /><small className="text-slate-500"><AutoText text={s.description} /></small></span>
                       </label>
                     ))}
                     <div className="rounded-lg border border-slate-200 bg-slate-50 p-2 text-xs text-slate-600">
                       {(activeApp.scholarshipId?.applicationProcess?.steps || []).length > 0
                         ? activeApp.scholarshipId.applicationProcess.steps.map((step, idx) => (
-                            <p key={`${step}-${idx}`}>{idx + 1}. {step}</p>
+                            <p key={`${step}-${idx}`}>{idx + 1}. <AutoText text={step} /></p>
                           ))
                         : "No step-by-step instructions added."}
                     </div>
@@ -950,12 +951,12 @@ export default function StudentDashboard() {
                     {(activeApp.documentChecklist || []).map((d) => (
                       <div key={d.documentType} className="mb-2 rounded-lg border border-slate-200 p-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">{d.label || d.documentType}</span>
+                          <span className="text-sm font-medium"><AutoText text={d.label || d.documentType} /></span>
                           <span className={`badge ${d.isUploaded ? "badge-success" : "badge-warning"}`}>
                             {d.isUploaded ? (d.isVerified ? "Verified" : "Uploaded") : "Pending"}
                           </span>
                         </div>
-                        {d.comment && <p className="mt-1 text-xs text-amber-700">{d.comment}</p>}
+                        {d.comment && <p className="mt-1 text-xs text-amber-700"><AutoText text={d.comment} /></p>}
                         <input type="file" className="mt-2 text-xs" onChange={(e) => uploadDoc(activeApp._id, d.documentType, e.target.files?.[0])} />
                       </div>
                     ))}
@@ -972,8 +973,8 @@ export default function StudentDashboard() {
           <h2 className="text-lg font-semibold">Notifications</h2>
           {notifications.map((n) => (
             <article key={n._id} className={`rounded-lg border p-3 ${n.isRead ? "border-slate-200" : "border-teal-200 bg-teal-50/40"}`}>
-              <div className="flex items-center justify-between gap-2"><h3 className="font-semibold">{n.title}</h3>{!n.isRead && <button className="btn-secondary py-1 text-xs" onClick={() => markRead(n._id)}>Mark read</button>}</div>
-              <p className="text-sm text-slate-600">{n.message}</p>
+              <div className="flex items-center justify-between gap-2"><h3 className="font-semibold"><AutoText text={n.title} /></h3>{!n.isRead && <button className="btn-secondary py-1 text-xs" onClick={() => markRead(n._id)}>Mark read</button>}</div>
+              <p className="text-sm text-slate-600"><AutoText text={n.message} /></p>
               <p className="text-xs text-slate-500">{new Date(n.createdAt).toLocaleString("en-IN")}</p>
             </article>
           ))}

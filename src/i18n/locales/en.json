@@ -1,6 +1,7 @@
 {
   "nav": {
     "brand": "ScholarLink",
+    "studentLabel": "Student",
     "adminLabel": "Admin",
     "moderatorLabel": "Moderator",
     "login": "Log in",
@@ -15,6 +16,13 @@
     "audit": "Audit",
     "fraud": "Fraud",
     "dashboard": "Dashboard",
+    "profile": "Profile",
+    "notifications": "Notifications",
+    "help": "Help",
+    "students": "Students",
+    "insights": "Insights",
+    "ingestion": "Ingestion",
+    "create": "Create",
     "myScholarships": "My scholarships",
     "assistance": "Assistance",
     "applications": "Applications"
@@ -100,6 +108,32 @@
     "viewingApproved": "You are viewing approved scholarships",
     "clickForDetails": "Click here to view details",
     "scrollEligibility": "Scroll down for eligibility criteria",
-    "viewingScholarship": "You are viewing scholarship details"
+    "viewingScholarship": "You are viewing scholarship details",
+    "route": {
+      "home": "Home page loaded. You can switch language and browse scholarship features.",
+      "login": "Login page loaded. Enter your email and password to continue.",
+      "signup": "Signup page loaded. Create your account to start scholarship matching.",
+      "studentDashboard": "Student dashboard loaded. You can check eligible scholarships and match scores.",
+      "studentProfile": "Student profile page loaded. Complete your details for better scholarship matching.",
+      "studentApplications": "Student applications page loaded. Track draft and submitted applications here.",
+      "studentNotifications": "Student notifications page loaded. Review reminders and latest updates.",
+      "studentScholarshipDetail": "Scholarship detail page loaded. Review eligibility, documents, and apply link.",
+      "studentAssistance": "Student assistance page loaded. Raise help requests and track moderator responses.",
+      "moderatorCreate": "Moderator create page loaded. Add and manage scholarship entries.",
+      "moderatorScholarships": "Moderator scholarships page loaded. Review your submitted scholarships.",
+      "moderatorAssistance": "Moderator assistance inbox loaded. Respond to pending student queries.",
+      "moderatorApplications": "Moderator applications view loaded. Review application progress.",
+      "adminOverview": "Admin overview loaded. Monitor platform activity and high-level metrics.",
+      "adminStudents": "Admin students panel loaded. View profiles and student data completeness.",
+      "adminScholarships": "Admin scholarship review loaded. Approve, edit, and verify scholarship records.",
+      "adminApplications": "Admin applications panel loaded. Track status across all scholarship applications.",
+      "adminDocuments": "Admin document review loaded. Validate uploads and update verification status.",
+      "adminModerators": "Admin moderators panel loaded. Manage moderator accounts and permissions.",
+      "adminVerification": "Admin verification queue loaded. Review pending scholarship verification tasks.",
+      "adminIngestion": "Ingestion panel loaded. Trigger and monitor automated scholarship fetch runs.",
+      "adminAudit": "Audit log page loaded. Inspect critical platform actions.",
+      "adminFraud": "Fraud panel loaded. Review suspicious activity and alerts.",
+      "generic": "Page loaded."
+    }
   }
 }
