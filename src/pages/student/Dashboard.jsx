@@ -17,6 +17,7 @@ import {
   uploadProfileDocument
 } from "../../services/studentService";
 import AutoText from "../../components/i18n/AutoText";
+import CrowdfundingSupport from "../../components/student/CrowdfundingSupport";
 
 const CATEGORY_OPTIONS = ["OPEN", "OBC", "SC", "ST", "VJNT", "EWS", "SEBC"];
 const EDUCATION_LEVEL_OPTIONS = ["DIPLOMA", "UG", "PG", "PHD"];
@@ -74,6 +75,7 @@ const profileSeed = {
   mobile: "",
   dateOfBirth: "",
   category: "OPEN",
+  annualFamilyIncome: "",
   annualIncome: "",
   personal: {
     firstName: "",
@@ -196,6 +198,7 @@ const mapProfile = (p) =>
         mobile: p.mobile || "",
         dateOfBirth: p.dateOfBirth ? new Date(p.dateOfBirth).toISOString().slice(0, 10) : "",
         category: p.category || "OPEN",
+        annualFamilyIncome: p.annualFamilyIncome ?? p.annualIncome ?? "",
         annualIncome: p.annualIncome || "",
         personal: {
           firstName: p.personal?.firstName || "",
@@ -305,6 +308,14 @@ export default function StudentDashboard() {
     ? activeApp.scholarshipId.applicationProcess.applyLink
     : "";
   const activeEligibilityText = buildEligibilityText(activeApp?.scholarshipId);
+  const resolvedAnnualFamilyIncome = Number(
+    profile?.annualFamilyIncome ??
+      profile?.annualIncome ??
+      dashboard?.profile?.annualFamilyIncome ??
+      dashboard?.profile?.annualIncome
+  );
+  const shouldShowCrowdfundingSupport =
+    Number.isFinite(resolvedAnnualFamilyIncome) && resolvedAnnualFamilyIncome <= 100000;
 
   const loadAll = async () => {
     const discoveryParams = { ...filters, eligibleOnly: true };
@@ -603,6 +614,8 @@ export default function StudentDashboard() {
               Dashboard now shows only scholarships where your profile is fully eligible. Partial or not-eligible scholarships are hidden.
             </p>
           </section>
+
+          {shouldShowCrowdfundingSupport && <CrowdfundingSupport />}
 
           <section className="card">
             <h2 className="text-lg font-semibold">Upcoming Deadlines</h2>
