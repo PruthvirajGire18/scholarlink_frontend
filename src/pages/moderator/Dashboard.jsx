@@ -70,6 +70,19 @@ const buildPayload = (form) => ({
   deadline: form.deadline
 });
 
+const valueOrDash = (value) => {
+  if (value === null || value === undefined) return "-";
+  const normalized = String(value).trim();
+  return normalized ? normalized : "-";
+};
+
+const formatDateOnly = (value) => {
+  if (!value) return "-";
+  const dt = new Date(value);
+  if (Number.isNaN(dt.getTime())) return "-";
+  return dt.toLocaleDateString("en-IN");
+};
+
 export default function ModeratorDashboard() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -318,12 +331,42 @@ export default function ModeratorDashboard() {
                 <h3 className="text-lg font-semibold text-slate-900">{assistanceDetail.assistanceRequest?.scholarshipId?.title}</h3>
                 <p className="text-sm text-slate-600">Student: {assistanceDetail.assistanceRequest?.studentId?.name} ({assistanceDetail.assistanceRequest?.studentId?.email})</p>
                 <p className="text-sm text-slate-600">Application status: {assistanceDetail.application?.status || "No application found"}</p>
-                <div className="rounded-lg border border-slate-200 p-3 text-sm">
-                  <p>Course: {assistanceDetail.studentProfile?.education?.course || "-"}</p>
+                <div className="rounded-lg border border-slate-200 p-3 text-sm space-y-1">
+                  <p className="font-semibold text-slate-800">Student Profile Data</p>
+                  <p>Mobile: {valueOrDash(assistanceDetail.studentProfile?.mobile)}</p>
+                  <p>DOB: {formatDateOnly(assistanceDetail.studentProfile?.dateOfBirth)}</p>
+                  <p>Category: {valueOrDash(assistanceDetail.studentProfile?.category)}</p>
+                  <p>Gender: {valueOrDash(assistanceDetail.studentProfile?.gender)}</p>
+                  <p>Annual Income: INR {Number(assistanceDetail.studentProfile?.annualIncome || 0).toLocaleString("en-IN")}</p>
+                  <p>Course: {valueOrDash(assistanceDetail.studentProfile?.education?.course)}</p>
+                  <p>Institute: {valueOrDash(assistanceDetail.studentProfile?.education?.institute)}</p>
+                  <p>Branch: {valueOrDash(assistanceDetail.studentProfile?.education?.branch)}</p>
+                  <p>Year: {valueOrDash(assistanceDetail.studentProfile?.education?.currentYear)}</p>
                   <p>Marks: {assistanceDetail.studentProfile?.education?.percentage ?? "-"}%</p>
-                  <p>Income: INR {Number(assistanceDetail.studentProfile?.annualIncome || 0).toLocaleString("en-IN")}</p>
+                  <p>
+                    Address: {valueOrDash(assistanceDetail.studentProfile?.address?.line1)},{" "}
+                    {valueOrDash(assistanceDetail.studentProfile?.address?.city)},{" "}
+                    {valueOrDash(assistanceDetail.studentProfile?.address?.district)},{" "}
+                    {valueOrDash(assistanceDetail.studentProfile?.address?.state)} -{" "}
+                    {valueOrDash(assistanceDetail.studentProfile?.address?.pincode)}
+                  </p>
+                  <p>Bank A/C: {valueOrDash(assistanceDetail.studentProfile?.bankDetails?.accountNumber)}</p>
+                  <p>IFSC: {valueOrDash(assistanceDetail.studentProfile?.bankDetails?.ifscCode)}</p>
                 </div>
                 <div className="space-y-2">
+                  <p className="text-sm font-semibold text-slate-800">Profile Uploaded Documents</p>
+                  {(assistanceDetail.profileDocuments || []).map((doc) => (
+                    <div key={`${doc.key}-${doc.fileUrl || doc.fileName}`} className="rounded border border-slate-200 p-2 text-sm">
+                      <p className="font-medium">{doc.label}</p>
+                      <p className="text-slate-600">File: {doc.fileName || "Unknown file"}</p>
+                      {doc.uploadedAt && <p className="text-slate-500">Uploaded: {new Date(doc.uploadedAt).toLocaleString("en-IN")}</p>}
+                      {doc.fileUrl && <a href={doc.fileUrl} target="_blank" rel="noreferrer" className="text-teal-600 hover:underline">Open profile document</a>}
+                    </div>
+                  ))}
+                  {(assistanceDetail.profileDocuments || []).length === 0 && <p className="text-sm text-slate-500">No profile documents uploaded.</p>}
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-slate-800">Application Guidance Documents</p>
                   {(assistanceDetail.documents || []).map((doc) => (
                     <div key={doc._id} className="rounded border border-slate-200 p-2 text-sm">
                       <p className="font-medium">{doc.documentType}</p>

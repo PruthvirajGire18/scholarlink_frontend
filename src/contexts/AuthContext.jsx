@@ -1,7 +1,25 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { loginAPI, signupAPI } from "../services/authService";
+import { API_BASE_URL } from "../services/apiClient";
 
 const AuthContext = createContext(null);
+const SESSION_SYNC_EVENT = "__SCHOLARLINK_SESSION_SYNC__";
+
+const resolveExtensionApiBaseUrl = () => {
+  const raw = String(API_BASE_URL || "").trim();
+  if (!raw) return window.location.origin;
+  if (/^https?:\/\//i.test(raw)) return raw.replace(/\/+$/, "");
+  if (raw.startsWith("/")) return window.location.origin;
+  return raw;
+};
+
+const emitSessionSyncEvent = (detail) => {
+  window.dispatchEvent(
+    new CustomEvent(SESSION_SYNC_EVENT, {
+      detail
+    })
+  );
+};
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -14,6 +32,10 @@ export const AuthProvider = ({ children }) => {
     const email = localStorage.getItem("user_email");
     if (token && role) {
       setUser({ id, role, name, email });
+      emitSessionSyncEvent({
+        token,
+        apiBaseUrl: resolveExtensionApiBaseUrl()
+      });
     }
   }, []);
 
@@ -32,6 +54,10 @@ export const AuthProvider = ({ children }) => {
       email: response.user?.email
     };
     setUser(currentUser);
+    emitSessionSyncEvent({
+      token: response.token,
+      apiBaseUrl: resolveExtensionApiBaseUrl()
+    });
     return currentUser;
   };
 
@@ -48,6 +74,9 @@ export const AuthProvider = ({ children }) => {
     if (accessibilityMode) localStorage.setItem("app_accessibility_mode", accessibilityMode);
     if (speechRate) localStorage.setItem("app_speech_rate", speechRate);
     setUser(null);
+    emitSessionSyncEvent({
+      clear: true
+    });
   };
 
   const value = useMemo(() => ({ user, login, signup, logout }), [user]);
