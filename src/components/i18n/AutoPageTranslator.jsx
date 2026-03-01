@@ -61,6 +61,7 @@ export default function AutoPageTranslator() {
   const translatedCacheRef = useRef(new Map());
   const isApplyingRef = useRef(false);
   const debounceTimerRef = useRef(null);
+  const runIdRef = useRef(0);
 
   useEffect(() => {
     if (typeof document === "undefined" || !document.body) return undefined;
@@ -115,14 +116,34 @@ export default function AutoPageTranslator() {
     };
 
     const processTranslation = async () => {
+      const runId = ++runIdRef.current;
       const textNodeMap = collectNodes();
+      const applyForCurrentLanguage = () => {
+        if (runId !== runIdRef.current) return;
+        isApplyingRef.current = true;
+        textNodeMap.forEach((items, normalizedText) => {
+          const translatedCore = isAlreadyInTargetScript(resolvedLanguage, normalizedText)
+            ? normalizedText
+            : translatedCacheRef.current.get(`${resolvedLanguage}::${normalizedText}`) || normalizedText;
+
+          items.forEach(({ node, originalRaw }) => {
+            if (!node?.isConnected) return;
+            node.nodeValue = preserveWhitespace(originalRaw, translatedCore);
+          });
+        });
+        isApplyingRef.current = false;
+      };
 
       if (resolvedLanguage === "en") {
+        if (runId !== runIdRef.current) return;
         isApplyingRef.current = true;
         restoreOriginals();
         isApplyingRef.current = false;
         return;
       }
+
+      // Immediately refresh text nodes using any cached values for this language.
+      applyForCurrentLanguage();
 
       const texts = [...textNodeMap.keys()];
       const needFetch = texts.filter((text) => {
@@ -133,6 +154,7 @@ export default function AutoPageTranslator() {
       if (needFetch.length > 0) {
         const chunks = chunkArray(needFetch, MAX_CHUNK_SIZE);
         for (const chunk of chunks) {
+          if (runId !== runIdRef.current) return;
           try {
             const response = await requestTranslations({
               texts: chunk,
@@ -140,29 +162,18 @@ export default function AutoPageTranslator() {
               targetLang: resolvedLanguage
             });
             chunk.forEach((text) => {
-              const translated = response.translations?.[text] || text;
-              translatedCacheRef.current.set(`${resolvedLanguage}::${text}`, translated);
+              const translated = response.translations?.[text];
+              // Keep retries possible when provider falls back to identity text.
+              if (translated && translated !== text) {
+                translatedCacheRef.current.set(`${resolvedLanguage}::${text}`, translated);
+              }
             });
           } catch {
-            chunk.forEach((text) => {
-              translatedCacheRef.current.set(`${resolvedLanguage}::${text}`, text);
-            });
+            // Ignore and keep original text; observer will retry later.
           }
+          applyForCurrentLanguage();
         }
       }
-
-      isApplyingRef.current = true;
-      textNodeMap.forEach((items, normalizedText) => {
-        const translatedCore = isAlreadyInTargetScript(resolvedLanguage, normalizedText)
-          ? normalizedText
-          : translatedCacheRef.current.get(`${resolvedLanguage}::${normalizedText}`) || normalizedText;
-
-        items.forEach(({ node, originalRaw }) => {
-          if (!node?.isConnected) return;
-          node.nodeValue = preserveWhitespace(originalRaw, translatedCore);
-        });
-      });
-      isApplyingRef.current = false;
     };
 
     const scheduleProcess = () => {
@@ -188,6 +199,7 @@ export default function AutoPageTranslator() {
     });
 
     return () => {
+      runIdRef.current += 1;
       observer.disconnect();
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);

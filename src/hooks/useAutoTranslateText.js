@@ -58,7 +58,9 @@ export default function useAutoTranslateText(text, options = {}) {
           sourceLang
         });
         const resolved = response.translations?.[originalText] || originalText;
-        cache.set(key, resolved);
+        if (resolved && resolved !== originalText) {
+          cache.set(key, resolved);
+        }
         if (active) setTranslatedText(resolved);
       } catch {
         if (active) setTranslatedText(originalText);

@@ -11,10 +11,10 @@ export default function Home() {
     user?.role === "ADMIN" ? "/admin" : user?.role === "MODERATOR" ? "/moderator" : "/student";
 
   return (
-    <section className="relative overflow-hidden pb-12 pt-6 sm:pb-16">
-      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_10%_10%,rgba(45,212,191,0.16),transparent_22%),radial-gradient(circle_at_90%_0%,rgba(251,191,36,0.18),transparent_21%)]" />
+    <section className="relative overflow-hidden pb-14 pt-8 sm:pb-20">
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_8%_12%,rgba(20,184,166,0.2),transparent_24%),radial-gradient(circle_at_92%_2%,rgba(245,158,11,0.2),transparent_22%)]" />
       <div className="page-container">
-        <div className="grid gap-6 lg:grid-cols-12">
+        <div className="grid gap-6 lg:grid-cols-12 lg:items-start">
           <div className="card lg:col-span-7 lg:p-10">
             <p className="inline-flex rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-teal-700">
               {t("home.tagline")}
@@ -52,19 +52,25 @@ export default function Home() {
               )}
             </div>
 
-            <div className="mt-8 grid gap-3 sm:grid-cols-3">
-              <article className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+            <div className="stat-grid">
+              <article className="stat-tile">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Smart Matching</p>
                 <p className="mt-1 text-sm font-semibold text-slate-800">Eligibility-first recommendations</p>
               </article>
-              <article className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+              <article className="stat-tile">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">One Profile</p>
                 <p className="mt-1 text-sm font-semibold text-slate-800">Reuse data and documents instantly</p>
               </article>
-              <article className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+              <article className="stat-tile">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Safer Process</p>
                 <p className="mt-1 text-sm font-semibold text-slate-800">Manual final submission on official portals</p>
               </article>
+            </div>
+
+            <div className="mt-6 flex flex-wrap items-center gap-2 text-xs text-slate-600">
+              <span className="badge badge-neutral">Live eligibility guidance</span>
+              <span className="badge badge-neutral">Profile-based autofill support</span>
+              <span className="badge badge-neutral">Moderator assisted workflow</span>
             </div>
           </div>
 
@@ -74,7 +80,7 @@ export default function Home() {
               {[t("home.why1"), t("home.why2"), t("home.why3"), t("home.why4"), t("home.why5")].map((item, i) => (
                 <li key={i} className="flex gap-3 rounded-lg border border-slate-200 bg-slate-50/70 px-3 py-2">
                   <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-teal-100 text-xs font-bold text-teal-700">
-                    OK
+                    {String(i + 1).padStart(2, "0")}
                   </span>
                   <span>{item}</span>
                 </li>

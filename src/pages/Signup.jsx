@@ -27,10 +27,10 @@ export default function Signup() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden px-4 py-10 sm:px-6 lg:px-8">
+    <div className="auth-shell">
       <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_90%_5%,rgba(20,184,166,0.18),transparent_22%),radial-gradient(circle_at_0%_20%,rgba(14,165,233,0.15),transparent_20%)]" />
       <div className="mx-auto grid w-full max-w-5xl gap-6 lg:grid-cols-12 lg:items-stretch">
-        <aside className="card hidden lg:col-span-5 lg:block lg:p-8">
+        <aside className="auth-side-panel">
           <p className="inline-flex rounded-full bg-cyan-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-700">
             Quick onboarding
           </p>
@@ -41,9 +41,14 @@ export default function Signup() {
             <li className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">Track notifications and deadlines in one place</li>
             <li className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">Accessible interface with language and voice tools</li>
           </ul>
+          <div className="mt-6 flex flex-wrap gap-2 text-xs text-slate-600">
+            <span className="badge badge-neutral">Free onboarding</span>
+            <span className="badge badge-neutral">No paperwork confusion</span>
+            <span className="badge badge-neutral">Guided dashboard setup</span>
+          </div>
         </aside>
 
-        <div className="card lg:col-span-7 lg:p-8">
+        <div className="auth-form-panel">
           <div className="text-center lg:text-left">
             <h2 className="text-2xl font-black tracking-tight text-slate-900">{t("auth.createAccountTitle")}</h2>
             <p className="mt-1 text-sm text-slate-500">{t("auth.createAccountSubtitle")}</p>

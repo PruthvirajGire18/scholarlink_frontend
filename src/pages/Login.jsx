@@ -30,23 +30,28 @@ export default function Login() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden px-4 py-10 sm:px-6 lg:px-8">
+    <div className="auth-shell">
       <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_10%_15%,rgba(20,184,166,0.17),transparent_24%),radial-gradient(circle_at_88%_6%,rgba(250,204,21,0.16),transparent_18%)]" />
       <div className="mx-auto grid w-full max-w-5xl gap-6 lg:grid-cols-12 lg:items-stretch">
-        <aside className="card hidden lg:col-span-5 lg:block lg:p-8">
+        <aside className="auth-side-panel">
           <p className="inline-flex rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-teal-700">
             Student-first platform
           </p>
           <h1 className="mt-4 text-3xl font-black tracking-tight text-slate-900">{t("nav.brand")}</h1>
           <p className="mt-3 text-sm leading-relaxed text-slate-600">{t("auth.verifiedPlatform")}</p>
           <ul className="mt-6 space-y-3 text-sm text-slate-700">
-            <li className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">Eligibility-first scholarship discovery</li>
-            <li className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">Profile and document reuse for faster applications</li>
-            <li className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">Track application roadmap with deadline alerts</li>
+            <li className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">Priority-based scholarship matching and ranking</li>
+            <li className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">One profile for multi-application workflows</li>
+            <li className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">Need-help threads with moderator collaboration</li>
           </ul>
+          <div className="mt-6 flex flex-wrap gap-2 text-xs text-slate-600">
+            <span className="badge badge-neutral">Secure login</span>
+            <span className="badge badge-neutral">Role-based dashboard</span>
+            <span className="badge badge-neutral">Multilingual UX</span>
+          </div>
         </aside>
 
-        <div className="card lg:col-span-7 lg:p-8">
+        <div className="auth-form-panel">
           <div className="text-center lg:text-left">
             <h2 className="text-2xl font-black tracking-tight text-slate-900">{t("nav.login")}</h2>
             <p className="mt-1 text-sm text-slate-500">Access your dashboard and continue applications.</p>

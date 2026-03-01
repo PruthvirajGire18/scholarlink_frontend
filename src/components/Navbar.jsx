@@ -5,10 +5,10 @@ import { useTranslation } from "../i18n";
 import SpeakButton from "./SpeakButton";
 
 const navLinkClass = (active) =>
-  `rounded-xl px-3 py-2 text-sm font-semibold transition ${
+  `rounded-xl border px-3 py-2 text-sm font-semibold transition ${
     active
-      ? "bg-gradient-to-r from-teal-600 to-cyan-600 text-white shadow-sm shadow-teal-700/25"
-      : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+      ? "border-teal-500/40 bg-gradient-to-r from-teal-600 to-cyan-600 text-white shadow-sm shadow-teal-700/25"
+      : "border-transparent text-slate-700 hover:border-slate-200 hover:bg-slate-100 hover:text-slate-900"
   }`;
 
 function Brand() {
@@ -16,7 +16,7 @@ function Brand() {
 
   return (
     <Link to="/" className="group inline-flex items-center gap-2 rounded-xl px-2 py-1 transition hover:bg-teal-50/70">
-      <span className="grid h-9 w-9 place-content-center rounded-xl bg-gradient-to-br from-teal-600 to-cyan-600 text-sm font-bold text-white shadow-sm shadow-teal-700/25">
+      <span className="grid h-9 w-9 place-content-center rounded-xl border border-teal-500/20 bg-gradient-to-br from-teal-600 to-cyan-600 text-sm font-bold text-white shadow-sm shadow-teal-700/30">
         SL
       </span>
       <span className="flex flex-col leading-tight">
@@ -31,7 +31,7 @@ function Brand() {
 
 function UtilityActions() {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1 rounded-xl border border-slate-200/75 bg-white/80 px-1 py-1 shadow-sm">
       <SpeakButton />
       <LanguageSwitcher />
       <AccessibilitySettings />
@@ -43,7 +43,7 @@ function PublicNav() {
   const { t } = useTranslation();
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/70 bg-white/80 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.5)] backdrop-blur-xl">
+    <header className="sticky top-0 z-50 border-b border-white/70 bg-white/85 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.52)] backdrop-blur-xl">
       <div className="page-container flex items-center justify-between gap-3 py-3">
         <Brand />
         <nav className="flex items-center gap-2">
@@ -65,7 +65,7 @@ function UserNav({ links, baseLabel, onLogout }) {
   const { t } = useTranslation();
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/70 bg-white/85 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.5)] backdrop-blur-xl">
+    <header className="sticky top-0 z-50 border-b border-white/70 bg-white/90 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.52)] backdrop-blur-xl">
       <div className="page-container py-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="inline-flex items-center gap-3">
@@ -82,7 +82,7 @@ function UserNav({ links, baseLabel, onLogout }) {
             </button>
           </div>
         </div>
-        <nav className="mt-3 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <nav className="mt-3 overflow-x-auto rounded-2xl border border-slate-200/75 bg-white/80 p-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <div className="flex min-w-max items-center gap-2 pb-1">
             {links.map((item) => (
               <Link
